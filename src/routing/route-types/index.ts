@@ -1,5 +1,5 @@
-import { BrowserRoute as Browser } from './browser'
+import { BrowserRoute as Browser } from "./browser";
 
 export const RouteTypes = {
-    Browser
-}
+	Browser,
+};

@@ -1,3 +1,3 @@
 export class BrowserRoute {
-    constructor(public path: string) {}
+	constructor(public path: string) {}
 }

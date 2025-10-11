@@ -4,9 +4,11 @@
   "type": "module",
   "scripts": {
     "dev": "bun run --watch ./src/main.ts",
-    "build": "bun build --compile ./src/main.ts --outfile ./dist/bin/red"
+    "build": "bun build --compile ./src/main.ts --outfile ./dist/bin/red",
+    "lint-format": "bunx @biomejs/biome check ./src --fix"
   },
   "devDependencies": {
+    "@biomejs/biome": "^2.2.5",
     "@types/bun": "latest",
     "@types/react": "^19.2.2",
     "typescript": "^5.9.3"
