@@ -1,3 +1,2 @@
 #!/usr/bin/env sh
-bun run lint-format
-npx devmoji -e --lint
+bunx devmoji -e --lint
