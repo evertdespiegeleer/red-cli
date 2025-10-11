@@ -1,4 +1,4 @@
-# Red
+# Red 🔴
 A TUI Redis client, inspired by [k9s](https://github.com/derailed/k9s).
 
 > ⚠️ This is a work in progress. At time of writing, it's a little project I'm working on for two main reasons:
@@ -8,6 +8,7 @@ A TUI Redis client, inspired by [k9s](https://github.com/derailed/k9s).
 > It's yet to be seen how far I'll take this. If you're from the far future and this message is still here, then it probably means it never got anywhere beyond a prototype stage :\)
 
 ## Development
+Initialize the repository:
 ```sh
 ./scripts/init.sh
 ```
