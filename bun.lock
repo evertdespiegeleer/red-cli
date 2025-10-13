@@ -6,6 +6,7 @@
       "dependencies": {
         "@opentui/core": "^0.1.26",
         "@opentui/react": "^0.1.26",
+        "@tanstack/react-query": "^5.90.2",
         "ioredis": "^5.8.1",
         "react": "^19.2.0",
         "zod": "^4.1.12",
@@ -112,6 +113,10 @@
     "@opentui/core-win32-x64": ["@opentui/core-win32-x64@0.1.26", "", { "os": "win32", "cpu": "x64" }, "sha512-xFjiCMAh1MaoS2VyAvBpR9pTeyt8jRCA01wpEWhY+DWO5oyW0txdeLJxuvrMCfr6w14ath0oBOou1EFNTpl6+w=="],
 
     "@opentui/react": ["@opentui/react@0.1.26", "", { "dependencies": { "@opentui/core": "0.1.26", "react-reconciler": "^0.32.0" }, "peerDependencies": { "react": ">=19.0.0" } }, "sha512-v0cyIY0j3R3YfPEKdhEnVPxQhmk+ym2lemkfVNXyoSzuVokD0D11/RatXc2QORzgJJBVg3HwSaycbFGzyf707Q=="],
+
+    "@tanstack/query-core": ["@tanstack/query-core@5.90.2", "", {}, "sha512-k/TcR3YalnzibscALLwxeiLUub6jN5EDLwKDiO7q5f4ICEoptJ+n9+7vcEFy5/x/i6Q+Lb/tXrsKCggf5uQJXQ=="],
+
+    "@tanstack/react-query": ["@tanstack/react-query@5.90.2", "", { "dependencies": { "@tanstack/query-core": "5.90.2" }, "peerDependencies": { "react": "^18 || ^19" } }, "sha512-CLABiR+h5PYfOWr/z+vWFt5VsOA2ekQeRQBFSKlcoW6Ndx/f8rfyVmq4LbgOM4GG2qtxAxjLYLOpCNTYm4uKzw=="],
 
     "@tokenizer/token": ["@tokenizer/token@0.3.0", "", {}, "sha512-OvjF+z51L3ov0OyAU0duzsYuvO01PH7x4t6DJx+guahgTnBHkhJdG7soQeTSFLWN3efnHyibZ4Z8l2EuWwJN3A=="],
 

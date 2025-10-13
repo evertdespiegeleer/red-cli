@@ -16,6 +16,7 @@
   "dependencies": {
     "@opentui/core": "^0.1.26",
     "@opentui/react": "^0.1.26",
+    "@tanstack/react-query": "^5.90.2",
     "ioredis": "^5.8.1",
     "react": "^19.2.0",
     "zod": "^4.1.12"
