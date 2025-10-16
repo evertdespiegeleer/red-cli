@@ -1,6 +1,7 @@
 import type { ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
+import clipboard from "clipboardy";
 import { useEffect, useRef, useState } from "react";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
@@ -69,6 +70,8 @@ export function Browser(props: { path: string }) {
 		}
 	}, 10000);
 	const [autoRefresh, setAutoRefresh] = useState(false);
+	useRegisterKeyBind("ctrl+r", "Refresh");
+	useRegisterKeyBind("r", "Toggle auto-refresh");
 	useKeyboard((key) => {
 		if (key.name === "r") {
 			key.preventDefault();
@@ -79,8 +82,16 @@ export function Browser(props: { path: string }) {
 			}
 		}
 	});
-	useRegisterKeyBind("ctrl+r", "Refresh");
-	useRegisterKeyBind("r", "Toggle auto-refresh");
+
+	useRegisterKeyBind("c", "Copy key to clipboard");
+	useKeyboard(async (key) => {
+		if (key.name === "c" && !key.ctrl && !key.meta) {
+			key.preventDefault();
+			if (highlightedKey != null) {
+				await clipboard.write(highlightedKey);
+			}
+		}
+	});
 
 	useRegisterKeyBind("g", "Toggle groups (not implemented)");
 

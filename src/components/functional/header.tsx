@@ -8,12 +8,12 @@ export function Header() {
 		<box
 			padding={1}
 			flexDirection="row"
-			gap={2}
+			gap={5}
 			alignItems="center"
 			flexGrow={1}
 			height={30}
 		>
-			<Logo />
+			<Logo big />
 			<box flexDirection="row" gap={2}>
 				{/* Keybinds */}
 				<box flexDirection="column">
