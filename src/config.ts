@@ -3,7 +3,10 @@ import { z } from "zod";
 
 export const zConfig = z.object({
 	redis: z.object({
-		connectionString: z.string().regex(/^rediss?:\/\/.+/),
+		connectionString: z
+			.string()
+			.regex(/^rediss?:\/\/.+/)
+			.default("redis://localhost:6379"),
 	}),
 });
 
