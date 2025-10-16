@@ -3,6 +3,9 @@ import { Logo } from "../pure/logo";
 
 export function Header() {
 	const { keyBinds } = useRegisteredKeybinds();
+	const sortedKeyBinds = Array.from(keyBinds).sort((a, b) =>
+		a.keyCombination.localeCompare(b.keyCombination),
+	);
 
 	return (
 		<box
@@ -10,14 +13,14 @@ export function Header() {
 			flexDirection="row"
 			gap={5}
 			alignItems="center"
-			flexGrow={1}
-			height={30}
+			flexShrink={1}
+			minHeight={10}
 		>
 			<Logo big />
 			<box flexDirection="row" gap={2}>
 				{/* Keybinds */}
 				<box flexDirection="column">
-					{Array.from(keyBinds).map((keyBind) => (
+					{Array.from(sortedKeyBinds).map((keyBind) => (
 						<box key={keyBind.keyCombination}>
 							<text fg="yellow">{`<${keyBind.keyCombination}>`}</text>
 						</box>
@@ -25,7 +28,7 @@ export function Header() {
 				</box>
 				{/* Keybind descriptions */}
 				<box flexDirection="column">
-					{Array.from(keyBinds).map((keyBind) => (
+					{Array.from(sortedKeyBinds).map((keyBind) => (
 						<text key={keyBind.keyCombination} fg="grey">
 							{keyBind.description}
 						</text>

@@ -71,7 +71,7 @@ export function Browser(props: { path: string }) {
 	}, 10000);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	useRegisterKeyBind("ctrl+r", "Refresh");
-	useRegisterKeyBind("r", "Toggle auto-refresh");
+	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {
 		if (key.name === "r") {
 			key.preventDefault();
@@ -93,7 +93,14 @@ export function Browser(props: { path: string }) {
 		}
 	});
 
-	useRegisterKeyBind("g", "Toggle groups (not implemented)");
+	const [showSubKeys, setShowSubKeys] = useState(false);
+	useRegisterKeyBind("g", `${showSubKeys ? "Hide" : "Show"} sub-keys`);
+	useKeyboard(async (key) => {
+		if (key.name === "g" && !key.ctrl && !key.meta) {
+			key.preventDefault();
+			setShowSubKeys((current) => !current);
+		}
+	});
 
 	return (
 		<box
