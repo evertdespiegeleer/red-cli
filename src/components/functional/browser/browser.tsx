@@ -5,12 +5,16 @@ import clipboard from "clipboardy";
 import { useEffect, useRef, useState } from "react";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
+import { useRoute } from "../../../routing/provider";
+import { BrowserRoute } from "../../../routing/route-types/browser";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
 import { useInterval } from "../../../util/use-interval";
 
 export function Browser(props: { path: string }) {
+	const { setRoute } = useRoute();
+
 	const query = useQuery({
 		queryKey: ["redis", "keys", props.path],
 		queryFn: async () => {
@@ -94,11 +98,19 @@ export function Browser(props: { path: string }) {
 	});
 
 	const [showSubKeys, setShowSubKeys] = useState(false);
-	useRegisterKeyBind("g", `${showSubKeys ? "Hide" : "Show"} sub-keys`);
+	useRegisterKeyBind("g", `${showSubKeys ? "Hide" : "Show"} nested keys`);
 	useKeyboard(async (key) => {
 		if (key.name === "g" && !key.ctrl && !key.meta) {
 			key.preventDefault();
 			setShowSubKeys((current) => !current);
+		}
+	});
+
+	useRegisterKeyBind("esc", "Go up one level");
+	useKeyboard(async (key) => {
+		if (key.name === "escape") {
+			key.preventDefault();
+			setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
 		}
 	});
 
