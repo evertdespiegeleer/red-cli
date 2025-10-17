@@ -1,6 +1,8 @@
 # Red 🔴
 A TUI Redis client, inspired by [k9s](https://github.com/derailed/k9s).
 
+![Demo](./docs/readme-assets/demo.gif "Demo")
+
 > ⚠️ This is a work in progress. At time of writing, it's a little project I'm working on for two main reasons:
 > - Because I actually want something like this for my own use
 > - To explore [OpenTUI](https://github.com/sst/opentui)
@@ -11,4 +13,9 @@ A TUI Redis client, inspired by [k9s](https://github.com/derailed/k9s).
 Initialize the repository:
 ```sh
 ./scripts/init.sh
+```
+
+Run the project:
+```sh
+bun run dev
 ```

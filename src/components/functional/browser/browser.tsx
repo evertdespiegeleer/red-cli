@@ -268,7 +268,7 @@ export function Browser(props: Props) {
 					gap={1}
 					style={{
 						// I am not entirely sure why this is needed, but without it, the scrollbox overlaps the title
-						height: 2,
+						height: 3,
 					}}
 				>
 					<text fg="cyan">Browser</text>
