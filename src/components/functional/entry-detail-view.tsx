@@ -72,8 +72,8 @@ export function EntryDetails(props: Props) {
 			flexDirection="column"
 		>
 			<BoxTitle gap={1}>
-				<text fg="yellow">Key Details</text>
-				<text fg="cyan">{`[${props.pathKey}]`}</text>
+				<text fg="cyan">Key Details</text>
+				<text fg="yellow">{`[${props.pathKey}]`}</text>
 				{autoRefresh && <text fg="green">🔄</text>}
 				{showIsFetching && <text fg="green">⏳</text>}
 			</BoxTitle>

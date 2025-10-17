@@ -1,9 +1,10 @@
-import type { BoxRenderable } from "@opentui/core";
+import type { BoxProps } from "@opentui/react";
 import type { ReactNode } from "react";
 
 interface Props {
 	children: ReactNode;
-	gap?: BoxRenderable["gap"];
+	gap?: NonNullable<BoxProps["style"]>["gap"];
+	style?: BoxProps["style"];
 }
 
 export function BoxTitle(props: Props) {
@@ -12,8 +13,9 @@ export function BoxTitle(props: Props) {
 			style={{
 				alignItems: "center",
 				width: "100%",
-				// height: 0,
+				// height: 1,
 				marginTop: -1,
+				...props.style,
 			}}
 		>
 			<box

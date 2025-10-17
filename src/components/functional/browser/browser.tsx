@@ -13,6 +13,7 @@ import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
 import { useInterval } from "../../../util/use-interval";
 import { usePropagate } from "../../../util/use-propagate";
+import { BoxTitle } from "../../pure/box-title";
 
 const focusItems = ["search", "key-list"] as const;
 
@@ -231,43 +232,37 @@ export function Browser(props: Props) {
 				borderColor="cyan"
 				borderStyle="rounded"
 				flexGrow={1}
-				title={` ${[
-					"Browser",
-
-					// The actual title
-					props.path || "[root]",
-
-					// Search indicator
-					search.propagatedValue && `🔍 "${search.propagatedValue}"`,
-
-					// Loading indicator
-					autoRefresh && "🔄",
-
-					showIsFetching && "⏳",
-				]
-					.filter(Boolean)
-					.join(" ")} `}
 				titleAlignment="center"
-				flexDirection="row"
+				flexDirection="column"
 			>
-				<scrollbox ref={scrollboxRef}>
-					<box flexDirection="column" width="100%">
-						{query.isLoading && <text>Loading...</text>}
+				<BoxTitle
+					gap={1}
+					style={{
+						// I myself am not entirely sure why this is needed, but without it, the scrollbox overlaps the title
+						height: 2,
+					}}
+				>
+					<text fg="cyan">Browser</text>
+					<text fg="yellow">{`[${props.path || "root"}]`}</text>
+					{autoRefresh && <text fg="green">🔄</text>}
+					{showIsFetching && <text fg="green">⏳</text>}
+				</BoxTitle>
+				<scrollbox ref={scrollboxRef} width="100%">
+					{query.isLoading && <text>Loading...</text>}
 
-						{query.data?.map((entry) => (
-							// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
-							<box
-								style={{
-									backgroundColor: entry === highlightedKey ? "red" : undefined,
-								}}
-								key={entry}
-								paddingLeft={1}
-								onMouseDown={() => setHighlightedKey(entry)}
-							>
-								<text>{entry}</text>
-							</box>
-						))}
-					</box>
+					{query.data?.map((entry) => (
+						// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
+						<box
+							style={{
+								backgroundColor: entry === highlightedKey ? "red" : undefined,
+							}}
+							key={entry}
+							paddingLeft={1}
+							onMouseDown={() => setHighlightedKey(entry)}
+						>
+							<text>{entry}</text>
+						</box>
+					))}
 				</scrollbox>
 			</box>
 		</box>
