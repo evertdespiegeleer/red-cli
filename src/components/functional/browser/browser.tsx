@@ -6,11 +6,11 @@ import { useEffect, useRef, useState } from "react";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
+import { RouteTypes } from "../../../routing/route-types";
 import { BrowserRoute } from "../../../routing/route-types/browser";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
-import { useDebounce } from "../../../util/use-debounce";
 import { useInterval } from "../../../util/use-interval";
 import { usePropagate } from "../../../util/use-propagate";
 
@@ -67,7 +67,12 @@ export function SearchBar(props: SearchBarProps) {
 	);
 }
 
-export function Browser(props: { path: string }) {
+interface Props {
+	focussed?: boolean;
+	path: string;
+}
+
+export function Browser(props: Props) {
 	const search = usePropagate("");
 	const { setRoute } = useRoute();
 
@@ -84,7 +89,7 @@ export function Browser(props: { path: string }) {
 		},
 	});
 
-	const showIsFetching = useExtendsTrueishDuration(query.isFetching, 500);
+	const showIsFetching = useExtendsTrueishDuration(query.isFetching);
 
 	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
 	const scrollboxRef = useRef<ScrollBoxRenderable>(null!);
@@ -133,7 +138,7 @@ export function Browser(props: { path: string }) {
 		if (autoRefresh) {
 			query.refetch();
 		}
-	}, 10000);
+	}, 5000);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
@@ -176,16 +181,16 @@ export function Browser(props: { path: string }) {
 		}
 	});
 
-	useRegisterKeyBind("esc", "Go up one level");
-	useKeyboard(async (key) => {
-		if (focus !== "key-list") {
-			return;
-		}
-		if (key.name === "escape") {
-			key.preventDefault();
-			setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
-		}
-	});
+	// useRegisterKeyBind("esc", "Go up one level");
+	// useKeyboard(async (key) => {
+	// 	if (focus !== "key-list") {
+	// 		return;
+	// 	}
+	// 	if (key.name === "escape") {
+	// 		key.preventDefault();
+	// 		setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
+	// 	}
+	// });
 
 	useRegisterKeyBind("/", "Search");
 	useKeyboard((key) => {
@@ -202,19 +207,10 @@ export function Browser(props: { path: string }) {
 		if (focus !== "key-list") {
 			return;
 		}
-		if (key.name === "/") {
+		if (key.name === "return" && highlightedKey != null) {
 			key.preventDefault();
-			setFocus("search");
-		}
-	});
-
-	useKeyboard((key) => {
-		if (focus !== "search") {
-			return;
-		}
-		if (key.name === "/") {
-			key.preventDefault();
-			setFocus("search");
+			console.log(highlightedKey);
+			setRoute(new RouteTypes.EntryDetails(highlightedKey));
 		}
 	});
 
@@ -236,6 +232,8 @@ export function Browser(props: { path: string }) {
 				borderStyle="rounded"
 				flexGrow={1}
 				title={` ${[
+					"Browser",
+
 					// The actual title
 					props.path || "[root]",
 
