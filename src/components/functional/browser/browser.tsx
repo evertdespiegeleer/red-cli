@@ -1,4 +1,4 @@
-import type { ScrollBoxRenderable } from "@opentui/core";
+import type { InputRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
@@ -7,7 +7,6 @@ import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
 import { RouteTypes } from "../../../routing/route-types";
-import { BrowserRoute } from "../../../routing/route-types/browser";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
@@ -25,11 +24,13 @@ interface SearchBarProps {
 	value: string;
 }
 export function SearchBar(props: SearchBarProps) {
-	useKeyboard((key) => {
+	const inputRef = useRef<InputRenderable>(null!);
+
+	useKeyboard(async (key) => {
 		if (!props.focussed) {
 			return;
 		}
-
+		// Pressing enter
 		if (key.name === "return") {
 			key.preventDefault();
 			props.onSearch?.(props.value);
@@ -37,6 +38,7 @@ export function SearchBar(props: SearchBarProps) {
 			return;
 		}
 
+		// Pressing escape
 		if (key.name === "escape") {
 			key.preventDefault();
 			if (props.value !== "") {
@@ -46,7 +48,21 @@ export function SearchBar(props: SearchBarProps) {
 			props.onBlur?.();
 			return;
 		}
+
+		// Pasting text
+		console.log(key.super);
+		if (key.name === "v" && (key.ctrl || key.meta)) {
+			key.preventDefault();
+			const clipboardContent = await clipboard.read();
+			props.onInput?.(props.value + clipboardContent);
+			return;
+		}
 	});
+
+	useEffect(() => {
+		// When the value changes, move the cursor to the end, this doesn't happen automatically when updating the value prop programmatically
+		inputRef.current.cursorPosition = props.value.length;
+	}, [props.value]);
 
 	return (
 		<box
@@ -57,6 +73,7 @@ export function SearchBar(props: SearchBarProps) {
 		>
 			<text>/</text>
 			<input
+				ref={inputRef}
 				flexGrow={1}
 				minHeight={1}
 				placeholder="Search keys..."
@@ -81,13 +98,28 @@ export function Browser(props: Props) {
 
 	const query = useQuery({
 		queryKey: ["redis", "keys", props.path, { search: search.propagatedValue }],
-		queryFn: async () => {
-			const redis = getRedis();
-			const keys = await redis.keys(
-				[props.path, "*"].filter(Boolean).join(":"),
-			);
-			return keys.filter((key) => key.includes(search.propagatedValue));
-		},
+		queryFn: () =>
+			new Promise<string[]>((resolve) => {
+				const redis = getRedis();
+				const keys: string[] = [];
+
+				let match = [props.path, "*"].filter(Boolean).join(":");
+				if (search.propagatedValue !== "") {
+					match = [props.path, `*${search.propagatedValue}*`]
+						.filter(Boolean)
+						.join(":");
+				}
+				const scanStream = redis.scanStream({
+					match,
+					count: 1000,
+				});
+				scanStream.on("data", (result) => {
+					result.forEach((key: string) => {
+						keys.push(key);
+					});
+				});
+				scanStream.on("end", () => resolve(keys.sort()));
+			}),
 	});
 
 	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
