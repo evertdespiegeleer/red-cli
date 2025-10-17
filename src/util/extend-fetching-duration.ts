@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 
 export const useExtendsTrueishDuration = (
 	bool: boolean,
-	debounceMillis?: number,
+	debounceMillis: number = 300,
 ) => {
 	const [debouncedBool, setDebouncedBool] = useState(false);
 	const timeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);

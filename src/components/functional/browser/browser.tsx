@@ -1,4 +1,4 @@
-import type { ScrollBoxRenderable } from "@opentui/core";
+import type { InputRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
@@ -6,13 +6,13 @@ import { useEffect, useRef, useState } from "react";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
-import { BrowserRoute } from "../../../routing/route-types/browser";
+import { RouteTypes } from "../../../routing/route-types";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
-import { useDebounce } from "../../../util/use-debounce";
 import { useInterval } from "../../../util/use-interval";
 import { usePropagate } from "../../../util/use-propagate";
+import { BoxTitle } from "../../pure/box-title";
 
 const focusItems = ["search", "key-list"] as const;
 
@@ -24,11 +24,13 @@ interface SearchBarProps {
 	value: string;
 }
 export function SearchBar(props: SearchBarProps) {
-	useKeyboard((key) => {
+	const inputRef = useRef<InputRenderable>(null!);
+
+	useKeyboard(async (key) => {
 		if (!props.focussed) {
 			return;
 		}
-
+		// Pressing enter
 		if (key.name === "return") {
 			key.preventDefault();
 			props.onSearch?.(props.value);
@@ -36,6 +38,7 @@ export function SearchBar(props: SearchBarProps) {
 			return;
 		}
 
+		// Pressing escape
 		if (key.name === "escape") {
 			key.preventDefault();
 			if (props.value !== "") {
@@ -45,7 +48,21 @@ export function SearchBar(props: SearchBarProps) {
 			props.onBlur?.();
 			return;
 		}
+
+		// Pasting text
+		console.log(key.super);
+		if (key.name === "v" && (key.ctrl || key.meta)) {
+			key.preventDefault();
+			const clipboardContent = await clipboard.read();
+			props.onInput?.(props.value + clipboardContent);
+			return;
+		}
 	});
+
+	useEffect(() => {
+		// When the value changes, move the cursor to the end, this doesn't happen automatically when updating the value prop programmatically
+		inputRef.current.cursorPosition = props.value.length;
+	}, [props.value]);
 
 	return (
 		<box
@@ -56,6 +73,7 @@ export function SearchBar(props: SearchBarProps) {
 		>
 			<text>/</text>
 			<input
+				ref={inputRef}
 				flexGrow={1}
 				minHeight={1}
 				placeholder="Search keys..."
@@ -67,7 +85,12 @@ export function SearchBar(props: SearchBarProps) {
 	);
 }
 
-export function Browser(props: { path: string }) {
+interface Props {
+	focussed?: boolean;
+	path: string;
+}
+
+export function Browser(props: Props) {
 	const search = usePropagate("");
 	const { setRoute } = useRoute();
 
@@ -75,16 +98,29 @@ export function Browser(props: { path: string }) {
 
 	const query = useQuery({
 		queryKey: ["redis", "keys", props.path, { search: search.propagatedValue }],
-		queryFn: async () => {
-			const redis = getRedis();
-			const keys = await redis.keys(
-				[props.path, "*"].filter(Boolean).join(":"),
-			);
-			return keys.filter((key) => key.includes(search.propagatedValue));
-		},
-	});
+		queryFn: () =>
+			new Promise<string[]>((resolve) => {
+				const redis = getRedis();
+				const keys: string[] = [];
 
-	const showIsFetching = useExtendsTrueishDuration(query.isFetching, 500);
+				let match = [props.path, "*"].filter(Boolean).join(":");
+				if (search.propagatedValue !== "") {
+					match = [props.path, `*${search.propagatedValue}*`]
+						.filter(Boolean)
+						.join(":");
+				}
+				const scanStream = redis.scanStream({
+					match,
+					count: 1000,
+				});
+				scanStream.on("data", (result) => {
+					result.forEach((key: string) => {
+						keys.push(key);
+					});
+				});
+				scanStream.on("end", () => resolve(keys.sort()));
+			}),
+	});
 
 	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
 	const scrollboxRef = useRef<ScrollBoxRenderable>(null!);
@@ -133,7 +169,7 @@ export function Browser(props: { path: string }) {
 		if (autoRefresh) {
 			query.refetch();
 		}
-	}, 10000);
+	}, 5000);
 	const [autoRefresh, setAutoRefresh] = useState(false);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
@@ -176,16 +212,16 @@ export function Browser(props: { path: string }) {
 		}
 	});
 
-	useRegisterKeyBind("esc", "Go up one level");
-	useKeyboard(async (key) => {
-		if (focus !== "key-list") {
-			return;
-		}
-		if (key.name === "escape") {
-			key.preventDefault();
-			setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
-		}
-	});
+	// useRegisterKeyBind("esc", "Go up one level");
+	// useKeyboard(async (key) => {
+	// 	if (focus !== "key-list") {
+	// 		return;
+	// 	}
+	// 	if (key.name === "escape") {
+	// 		key.preventDefault();
+	// 		setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
+	// 	}
+	// });
 
 	useRegisterKeyBind("/", "Search");
 	useKeyboard((key) => {
@@ -202,19 +238,9 @@ export function Browser(props: { path: string }) {
 		if (focus !== "key-list") {
 			return;
 		}
-		if (key.name === "/") {
+		if (key.name === "return" && highlightedKey != null) {
 			key.preventDefault();
-			setFocus("search");
-		}
-	});
-
-	useKeyboard((key) => {
-		if (focus !== "search") {
-			return;
-		}
-		if (key.name === "/") {
-			key.preventDefault();
-			setFocus("search");
+			setRoute(new RouteTypes.EntryDetails(highlightedKey));
 		}
 	});
 
@@ -235,41 +261,45 @@ export function Browser(props: { path: string }) {
 				borderColor="cyan"
 				borderStyle="rounded"
 				flexGrow={1}
-				title={` ${[
-					// The actual title
-					props.path || "[root]",
-
-					// Search indicator
-					search.propagatedValue && `🔍 "${search.propagatedValue}"`,
-
-					// Loading indicator
-					autoRefresh && "🔄",
-
-					showIsFetching && "⏳",
-				]
-					.filter(Boolean)
-					.join(" ")} `}
 				titleAlignment="center"
-				flexDirection="row"
+				flexDirection="column"
 			>
-				<scrollbox ref={scrollboxRef}>
-					<box flexDirection="column" width="100%">
-						{query.isLoading && <text>Loading...</text>}
+				<BoxTitle
+					gap={1}
+					style={{
+						// I am not entirely sure why this is needed, but without it, the scrollbox overlaps the title
+						height: 2,
+					}}
+				>
+					<text fg="cyan">Browser</text>
+					<text fg="yellow">{`[${props.path || "root"}]`}</text>
 
-						{query.data?.map((entry) => (
-							// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
-							<box
-								style={{
-									backgroundColor: entry === highlightedKey ? "red" : undefined,
-								}}
-								key={entry}
-								paddingLeft={1}
-								onMouseDown={() => setHighlightedKey(entry)}
-							>
-								<text>{entry}</text>
-							</box>
-						))}
-					</box>
+					{search.propagatedValue !== "" && (
+						<text fg="red">{`/${search.propagatedValue}`}</text>
+					)}
+
+					{autoRefresh && <text fg="green">🔄</text>}
+
+					{useExtendsTrueishDuration(query.isFetching) && (
+						<text fg="green">⏳</text>
+					)}
+				</BoxTitle>
+				<scrollbox ref={scrollboxRef} width="100%">
+					{query.isLoading && <text>Loading...</text>}
+
+					{query.data?.map((entry) => (
+						// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
+						<box
+							style={{
+								backgroundColor: entry === highlightedKey ? "red" : undefined,
+							}}
+							key={entry}
+							paddingLeft={1}
+							onMouseDown={() => setHighlightedKey(entry)}
+						>
+							<text>{entry}</text>
+						</box>
+					))}
 				</scrollbox>
 			</box>
 		</box>
