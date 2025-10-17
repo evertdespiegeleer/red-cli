@@ -1,0 +1,160 @@
+name: Build and Release
+
+on:
+    workflow_dispatch:
+        inputs:
+            release_title:
+                description: "Release title"
+                required: true
+                type: string
+            release_tag:
+                description: "Release tag (e.g., v1.0.0)"
+                required: true
+                type: string
+            prerelease:
+                description: "Mark as prerelease"
+                required: false
+                type: boolean
+                default: false
+
+jobs:
+    build:
+        name: Build for ${{ matrix.os }}
+        runs-on: ${{ matrix.os }}
+        strategy:
+            matrix:
+                include:
+                    - os: ubuntu-latest
+                      target: linux-x64
+                      binary_name: red-linux-x64
+                    - os: macos-latest
+                      target: darwin-x64
+                      binary_name: red-darwin-x64
+                    - os: macos-14 # Apple Silicon
+                      target: darwin-arm64
+                      binary_name: red-darwin-arm64
+                    - os: windows-latest
+                      target: win32-x64
+                      binary_name: red-win32-x64.exe
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Setup Bun
+              uses: oven-sh/setup-bun@v2
+              with:
+                  bun-version: latest
+
+            - name: Setup repository
+              run: |
+                  chmod +x ./scripts/init.sh
+                  ./scripts/init.sh
+              shell: bash
+
+            - name: Build binary
+              run: bun run build
+
+            - name: Rename binary
+              run: |
+                  mkdir -p release-artifacts
+                  if [ "${{ matrix.os }}" = "windows-latest" ]; then
+                    cp ./dist/bin/red.exe ./release-artifacts/${{ matrix.binary_name }}
+                  else
+                    cp ./dist/bin/red ./release-artifacts/${{ matrix.binary_name }}
+                  fi
+              shell: bash
+
+            - name: Upload artifact
+              uses: actions/upload-artifact@v4
+              with:
+                  name: ${{ matrix.binary_name }}
+                  path: ./release-artifacts/${{ matrix.binary_name }}
+                  retention-days: 1
+
+    release:
+        name: Create Release
+        needs: build
+        runs-on: ubuntu-latest
+        permissions:
+            contents: write
+
+        steps:
+            - name: Checkout code
+              uses: actions/checkout@v4
+
+            - name: Download all artifacts
+              uses: actions/download-artifact@v4
+              with:
+                  path: ./release-artifacts
+
+            - name: Display structure of downloaded files
+              run: ls -la ./release-artifacts/
+
+            - name: Create Release
+              id: create_release
+              uses: actions/create-release@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  tag_name: ${{ github.event.inputs.release_tag }}
+                  release_name: ${{ github.event.inputs.release_title }}
+                  draft: false
+                  prerelease: ${{ github.event.inputs.prerelease }}
+                  body: |
+                      ## ${{ github.event.inputs.release_title }}
+
+                      ### Downloads
+                      Choose the appropriate binary for your platform:
+                      - **Linux (x64)**: `red-linux-x64`
+                      - **macOS (Intel)**: `red-darwin-x64`
+                      - **macOS (Apple Silicon)**: `red-darwin-arm64`
+                      - **Windows (x64)**: `red-win32-x64.exe`
+
+                      ### Installation
+                      1. Download the appropriate binary for your platform
+                      2. Make it executable (Linux/macOS): `chmod +x red-*`
+                      3. Move to a directory in your PATH (optional)
+                      4. Run: `./red-*` or just `red` if in PATH
+
+                      Built from commit: ${{ github.sha }}
+
+            - name: Upload Linux x64 binary
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./release-artifacts/red-linux-x64/red-linux-x64
+                  asset_name: red-linux-x64
+                  asset_content_type: application/octet-stream
+
+            - name: Upload macOS x64 binary
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./release-artifacts/red-darwin-x64/red-darwin-x64
+                  asset_name: red-darwin-x64
+                  asset_content_type: application/octet-stream
+
+            - name: Upload macOS ARM64 binary
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./release-artifacts/red-darwin-arm64/red-darwin-arm64
+                  asset_name: red-darwin-arm64
+                  asset_content_type: application/octet-stream
+
+            - name: Upload Windows x64 binary
+              uses: actions/upload-release-asset@v1
+              env:
+                  GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+              with:
+                  upload_url: ${{ steps.create_release.outputs.upload_url }}
+                  asset_path: ./release-artifacts/red-win32-x64.exe/red-win32-x64.exe
+                  asset_name: red-win32-x64.exe
+                  asset_content_type: application/octet-stream
