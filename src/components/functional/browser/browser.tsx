@@ -90,8 +90,6 @@ export function Browser(props: Props) {
 		},
 	});
 
-	const showIsFetching = useExtendsTrueishDuration(query.isFetching);
-
 	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
 	const scrollboxRef = useRef<ScrollBoxRenderable>(null!);
 	useKeyboard((key) => {
@@ -210,7 +208,6 @@ export function Browser(props: Props) {
 		}
 		if (key.name === "return" && highlightedKey != null) {
 			key.preventDefault();
-			console.log(highlightedKey);
 			setRoute(new RouteTypes.EntryDetails(highlightedKey));
 		}
 	});
@@ -238,14 +235,22 @@ export function Browser(props: Props) {
 				<BoxTitle
 					gap={1}
 					style={{
-						// I myself am not entirely sure why this is needed, but without it, the scrollbox overlaps the title
+						// I am not entirely sure why this is needed, but without it, the scrollbox overlaps the title
 						height: 2,
 					}}
 				>
 					<text fg="cyan">Browser</text>
 					<text fg="yellow">{`[${props.path || "root"}]`}</text>
+
+					{search.propagatedValue !== "" && (
+						<text fg="red">{`/${search.propagatedValue}`}</text>
+					)}
+
 					{autoRefresh && <text fg="green">🔄</text>}
-					{showIsFetching && <text fg="green">⏳</text>}
+
+					{useExtendsTrueishDuration(query.isFetching) && (
+						<text fg="green">⏳</text>
+					)}
 				</BoxTitle>
 				<scrollbox ref={scrollboxRef} width="100%">
 					{query.isLoading && <text>Loading...</text>}

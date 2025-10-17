@@ -1,13 +1,14 @@
-import { BoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
-import { useRef, useState } from "react";
+import { useState } from "react";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
-import { getRedis } from "../../redis";
 import { useRoute } from "../../routing/provider";
+import { bigNumberGroup } from "../../util/big-number-group";
 import { useExtendsTrueishDuration } from "../../util/extend-fetching-duration";
+import { getRedisKeyDetails } from "../../util/get-redis-key-details";
 import { useInterval } from "../../util/use-interval";
 import { BoxTitle } from "../pure/box-title";
+import { RedisKeyType } from "../pure/redis-key-type";
 
 interface Props {
 	pathKey: string;
@@ -19,14 +20,11 @@ export function EntryDetails(props: Props) {
 
 	const query = useQuery({
 		queryKey: ["redis", "key", props.pathKey],
+		throwOnError: true,
 		queryFn: async () => {
-			const redis = getRedis();
-			const value = await redis.get(props.pathKey);
-			return value;
+			return await getRedisKeyDetails(props.pathKey);
 		},
 	});
-
-	const showIsFetching = useExtendsTrueishDuration(query.isFetching);
 
 	useKeyboard((key) => {
 		if (!props.focussed) {
@@ -73,12 +71,41 @@ export function EntryDetails(props: Props) {
 		>
 			<BoxTitle gap={1}>
 				<text fg="cyan">Key Details</text>
+				{query.data && <RedisKeyType type={query.data.type} />}
 				<text fg="yellow">{`[${props.pathKey}]`}</text>
 				{autoRefresh && <text fg="green">🔄</text>}
-				{showIsFetching && <text fg="green">⏳</text>}
+				{useExtendsTrueishDuration(query.isFetching) && (
+					<text fg="green">⏳</text>
+				)}
 			</BoxTitle>
 
-			<text selectable={false}>{query.data}</text>
+			{query.data != null && (
+				<box flexDirection="column" gap={1}>
+					{/* Table with info */}
+					<box flexDirection="row" gap={1}>
+						<box flexDirection="column">
+							<text fg="cyan">Type:</text>
+							<text fg="cyan">TTL:</text>
+						</box>
+						<box flexDirection="column">
+							<text>{query.data.type}</text>
+							{query.data.ttl == null ? (
+								<text style={{ fg: "grey" }}>Infinite</text>
+							) : (
+								<text>{`${bigNumberGroup(query.data.ttl)} seconds`}</text>
+							)}
+						</box>
+					</box>
+
+					{/* Value */}
+					<box flexDirection="column">
+						<text fg="cyan">Value:</text>
+						<text selectable={true}>
+							{JSON.stringify(query.data.value, null, 2)}
+						</text>
+					</box>
+				</box>
+			)}
 		</box>
 	);
 }
