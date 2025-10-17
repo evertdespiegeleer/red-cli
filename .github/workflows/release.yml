@@ -114,8 +114,9 @@ jobs:
                       ### Installation
                       1. Download the appropriate binary for your platform
                       2. Make it executable (Linux/macOS): `chmod +x red-*`
-                      3. Move to a directory in your PATH (optional)
-                      4. Run: `./red-*` or just `red` if in PATH
+                      3. On macOS, dequarantine the binary if necessary: `xattr -d com.apple.quarantine red-*`
+                      4. Move to a directory in your PATH (optional)
+                      5. Run: `./red-*` or just `red` if in PATH
 
                       Built from commit: ${{ github.sha }}
 
