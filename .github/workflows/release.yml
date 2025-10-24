@@ -27,6 +27,9 @@ jobs:
           - os: ubuntu-latest
             target: linux-x64
             binary_name: red-linux-x64
+          - os: ubuntu-latest
+            target: linux-arm64
+            binary_name: red-linux-arm64
           - os: macos-latest
             target: darwin-x64
             binary_name: red-darwin-x64
