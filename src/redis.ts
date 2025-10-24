@@ -7,7 +7,7 @@ export const initRedis = () => {
 	if (redis != null) {
 		throw new Error("Redis already initialized");
 	}
-	redis = new Redis(getConfig().redis.connectionString, {
+	redis = new Redis(getConfig().connectionString, {
 		retryStrategy() {
 			return 1000; // retry after 1 second
 		},

@@ -18,7 +18,7 @@ brew install red-cli
 
 ## Usage
 ```sh
-REDIS_CONNECTION_STRING="redis://localhost:6379" red
+red --connection-string "redis://localhost:6379"
 ```
 
 ## Development
