@@ -23,5 +23,6 @@
     "react": "^19.2.0",
     "zod": "^4.1.12"
   },
-  "private": true
+  "private": true,
+  "license": "MIT"
 }
