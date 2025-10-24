@@ -7,6 +7,7 @@ import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
 import { RouteTypes } from "../../../routing/route-types";
+import { BrowserRoute } from "../../../routing/route-types/browser";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
@@ -96,13 +97,59 @@ export function Browser(props: Props) {
 
 	const [focus, setFocus] = useState<(typeof focusItems)[number]>("key-list");
 
-	const query = useQuery({
-		queryKey: ["redis", "keys", props.path, { search: search.propagatedValue }],
-		queryFn: () =>
-			new RedisUtils(getRedis(), props.path).getRecursiveChildKeys(),
+	// const [showRecursive, setShowRecursive] = useState(false);
+	// useRegisterKeyBind("n", `${showRecursive ? "Hide" : "Show"} nested keys`);
+	// useKeyboard(async (key) => {
+	// 	if (focus !== "key-list") {
+	// 		return;
+	// 	}
+	// 	if (key.name === "n" && !key.ctrl && !key.meta) {
+	// 		key.preventDefault();
+	// 		setShowRecursive((current) => !current);
+	// 	}
+	// });
+
+	const [showGroups, setShowGroups] = useState(true);
+	useRegisterKeyBind("g", `${showGroups ? "Hide" : "Show"} groups`);
+	useKeyboard(async (key) => {
+		if (focus !== "key-list") {
+			return;
+		}
+		if (key.name === "g" && !key.ctrl && !key.meta) {
+			key.preventDefault();
+			setShowGroups((current) => !current);
+		}
 	});
 
-	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
+	const query = useQuery({
+		queryKey: [
+			"redis",
+			"keys",
+			props.path,
+			{ search: search.propagatedValue, showGroups },
+		],
+		queryFn: async () => {
+			// new RedisUtils(getRedis(), props.path).getRecursiveChildKeys(),
+			const redisUtils = new RedisUtils(getRedis(), props.path);
+			const promises = [redisUtils.getDirectChildKeys()];
+			if (showGroups) {
+				promises.push(redisUtils.getDirectChildGroups());
+			}
+			const allEntries = await Promise.all(promises).then((e) => e.flat());
+			return allEntries.sort((a, b) =>
+				a.relativePath.localeCompare(b.relativePath),
+			);
+		},
+	});
+
+	const [highlightedKeyFullPath, setHighlightedKeyFullPath] = useState<
+		string | undefined
+	>();
+
+	useEffect(() => {
+		console.log(highlightedKeyFullPath);
+	}, [highlightedKeyFullPath]);
+
 	const scrollboxRef = useRef<ScrollBoxRenderable>(null!);
 	useKeyboard((key) => {
 		if (focus !== "key-list") {
@@ -110,27 +157,27 @@ export function Browser(props: Props) {
 		}
 		const indexDelta = key.name === "down" ? 1 : key.name === "up" ? -1 : 0;
 		if (query.data != null && indexDelta !== 0) {
-			setHighlightedKey((current) => {
+			setHighlightedKeyFullPath((current) => {
 				const currentHighlightedIndex =
 					current != null
-						? query.data.map((entry) => entry.relativePath).indexOf(current)
+						? query.data.map((e) => e.fullPath).indexOf(current)
 						: -1;
 				const newHighlightedIndex = clamp(
 					0,
 					query.data.length - 1,
 				)(currentHighlightedIndex + indexDelta);
-				return query.data[newHighlightedIndex].relativePath;
+				return query.data[newHighlightedIndex].fullPath;
 			});
 		}
 	});
 
 	useEffect(() => {
-		if (highlightedKey == null || query.data == null) {
+		if (highlightedKeyFullPath == null || query.data == null) {
 			return;
 		}
 		const highlightedKeyIndex = query.data
-			.map((entry) => entry.relativePath)
-			.indexOf(highlightedKey);
+			.map((entry) => entry.fullPath)
+			.indexOf(highlightedKeyFullPath);
 		// In case we reach the bottom of the scrollbox, scroll down. Don't scroll down when the thing we're selecting is already visible.
 		const { current: scrollbox } = scrollboxRef;
 
@@ -147,7 +194,7 @@ export function Browser(props: Props) {
 		]);
 
 		scrollbox.scrollTo(scrollbox.scrollTop + outOfBoundsDiff);
-	}, [highlightedKey, query.data]);
+	}, [highlightedKeyFullPath, query.data]);
 
 	useInterval(() => {
 		if (autoRefresh) {
@@ -178,34 +225,22 @@ export function Browser(props: Props) {
 		}
 		if (key.name === "c" && !key.ctrl && !key.meta) {
 			key.preventDefault();
-			if (highlightedKey != null) {
-				await clipboard.write(highlightedKey);
+			if (highlightedKeyFullPath != null) {
+				await clipboard.write(highlightedKeyFullPath);
 			}
 		}
 	});
 
-	const [showSubKeys, setShowSubKeys] = useState(false);
-	useRegisterKeyBind("g", `${showSubKeys ? "Hide" : "Show"} nested keys`);
 	useKeyboard(async (key) => {
 		if (focus !== "key-list") {
 			return;
 		}
-		if (key.name === "g" && !key.ctrl && !key.meta) {
+		if (key.name === "escape") {
 			key.preventDefault();
-			setShowSubKeys((current) => !current);
+			const newRoute = props.path.split(":").slice(0, -1).join(":");
+			setRoute(new BrowserRoute(newRoute));
 		}
 	});
-
-	// useRegisterKeyBind("esc", "Go up one level");
-	// useKeyboard(async (key) => {
-	// 	if (focus !== "key-list") {
-	// 		return;
-	// 	}
-	// 	if (key.name === "escape") {
-	// 		key.preventDefault();
-	// 		setRoute(new BrowserRoute(props.path.split(":").slice(0, -1).join(":")));
-	// 	}
-	// });
 
 	useRegisterKeyBind("/", "Search");
 	useKeyboard((key) => {
@@ -222,9 +257,19 @@ export function Browser(props: Props) {
 		if (focus !== "key-list") {
 			return;
 		}
-		if (key.name === "return" && highlightedKey != null) {
+		if (key.name === "return" && highlightedKeyFullPath != null) {
 			key.preventDefault();
-			setRoute(new RouteTypes.EntryDetails(highlightedKey));
+			const highlightedEntry = query.data?.find(
+				(entry) => entry.fullPath === highlightedKeyFullPath,
+			);
+			if (highlightedEntry == null) {
+				throw new Error("Highlighted entry not found");
+			}
+			if (highlightedEntry.isGroup) {
+				setRoute(new RouteTypes.Browser(highlightedEntry.fullPath));
+				return;
+			}
+			setRoute(new RouteTypes.EntryDetails(highlightedKeyFullPath));
 		}
 	});
 
@@ -237,7 +282,7 @@ export function Browser(props: Props) {
 				onSearch={() => {
 					search.propagate();
 					setFocus("key-list");
-					setHighlightedKey(undefined);
+					setHighlightedKeyFullPath(undefined);
 				}}
 				onBlur={() => setFocus("key-list")}
 			/>
@@ -276,13 +321,18 @@ export function Browser(props: Props) {
 						<box
 							style={{
 								backgroundColor:
-									entry.relativePath === highlightedKey ? "red" : undefined,
+									entry.fullPath === highlightedKeyFullPath ? "red" : undefined,
+								flexDirection: "row",
+								gap: 1,
 							}}
 							key={entry.relativePath}
 							paddingLeft={1}
-							onMouseDown={() => setHighlightedKey(entry.relativePath)}
+							onMouseDown={() => setHighlightedKeyFullPath(entry.fullPath)}
 						>
-							<text>{entry.relativePath}</text>
+							<text>{entry.isGroup ? "📁" : "📄"}</text>
+							<text fg={entry.isGroup ? "yellow" : undefined}>
+								{entry.relativePath}
+							</text>
 						</box>
 					))}
 				</scrollbox>

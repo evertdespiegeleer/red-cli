@@ -1,6 +1,6 @@
 import type { getRedis } from "../redis";
 
-type KeyReturnType = {
+export type KeyReturnType = {
 	baseName: string;
 	relativePath: string;
 	fullPath: string;
@@ -55,11 +55,11 @@ export class RedisUtils {
 		for (const key of relevantKeys) {
 			// Remove the last section to get the group name
 			const fullPath = key.fullPath.split(":").slice(0, -1).join(":");
-			if (fullPath === "") {
-				continue;
-			}
 			const pathPrefix = this.path.length > 0 ? `${this.path}:` : "";
 			const relativePath = fullPath.slice(pathPrefix.length);
+			if (relativePath === "") {
+				continue;
+			}
 			groups.set(fullPath, {
 				fullPath,
 				relativePath,
