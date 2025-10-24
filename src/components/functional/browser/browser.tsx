@@ -99,26 +99,30 @@ export function Browser(props: Props) {
 	const query = useQuery({
 		queryKey: ["redis", "keys", props.path, { search: search.propagatedValue }],
 		queryFn: () =>
-			new Promise<string[]>((resolve) => {
-				const redis = getRedis();
-				const keys: string[] = [];
+			new Promise<string[]>((resolve, reject) => {
+				try {
+					const redis = getRedis();
+					const keys: string[] = [];
 
-				let match = [props.path, "*"].filter(Boolean).join(":");
-				if (search.propagatedValue !== "") {
-					match = [props.path, `*${search.propagatedValue}*`]
-						.filter(Boolean)
-						.join(":");
-				}
-				const scanStream = redis.scanStream({
-					match,
-					count: 1000,
-				});
-				scanStream.on("data", (result) => {
-					result.forEach((key: string) => {
-						keys.push(key);
+					let match = [props.path, "*"].filter(Boolean).join(":");
+					if (search.propagatedValue !== "") {
+						match = [props.path, `*${search.propagatedValue}*`]
+							.filter(Boolean)
+							.join(":");
+					}
+					const scanStream = redis.scanStream({
+						match,
+						count: 1000,
 					});
-				});
-				scanStream.on("end", () => resolve(keys.sort()));
+					scanStream.on("data", (result) => {
+						result.forEach((key: string) => {
+							keys.push(key);
+						});
+					});
+					scanStream.on("end", () => resolve(keys.sort()));
+				} catch (error) {
+					reject(error);
+				}
 			}),
 	});
 
