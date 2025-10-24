@@ -11,7 +11,11 @@ echo "🧪 Filling Redis with mock data..."
 tempfile=$(mktemp)
 # Generate 100 string key-value pairs
 for i in $(seq 1 100); do
-    echo "SET key:$i value:$i" >> $tempfile
+    echo "SET key-$i value-$i" >> $tempfile
+done
+# Generate 100 string key-value pairs in group1
+for i in $(seq 1 100); do
+    echo "SET group1:key-$i group1-value-$i" >> $tempfile
 done
 docker exec -i mock-redis redis-cli --pipe < $tempfile
 rm -f $tempfile

@@ -10,6 +10,7 @@ import { RouteTypes } from "../../../routing/route-types";
 import { biggestAbsolute } from "../../../util/biggest-absolute";
 import { clamp } from "../../../util/clamp";
 import { useExtendsTrueishDuration } from "../../../util/extend-fetching-duration";
+import { RedisUtils } from "../../../util/redis-get-grouped-keys";
 import { useInterval } from "../../../util/use-interval";
 import { usePropagate } from "../../../util/use-propagate";
 import { BoxTitle } from "../../pure/box-title";
@@ -50,7 +51,6 @@ export function SearchBar(props: SearchBarProps) {
 		}
 
 		// Pasting text
-		console.log(key.super);
 		if (key.name === "v" && (key.ctrl || key.meta)) {
 			key.preventDefault();
 			const clipboardContent = await clipboard.read();
@@ -99,31 +99,7 @@ export function Browser(props: Props) {
 	const query = useQuery({
 		queryKey: ["redis", "keys", props.path, { search: search.propagatedValue }],
 		queryFn: () =>
-			new Promise<string[]>((resolve, reject) => {
-				try {
-					const redis = getRedis();
-					const keys: string[] = [];
-
-					let match = [props.path, "*"].filter(Boolean).join(":");
-					if (search.propagatedValue !== "") {
-						match = [props.path, `*${search.propagatedValue}*`]
-							.filter(Boolean)
-							.join(":");
-					}
-					const scanStream = redis.scanStream({
-						match,
-						count: 1000,
-					});
-					scanStream.on("data", (result) => {
-						result.forEach((key: string) => {
-							keys.push(key);
-						});
-					});
-					scanStream.on("end", () => resolve(keys.sort()));
-				} catch (error) {
-					reject(error);
-				}
-			}),
+			new RedisUtils(getRedis(), props.path).getRecursiveChildKeys(),
 	});
 
 	const [highlightedKey, setHighlightedKey] = useState<string | undefined>();
@@ -136,12 +112,14 @@ export function Browser(props: Props) {
 		if (query.data != null && indexDelta !== 0) {
 			setHighlightedKey((current) => {
 				const currentHighlightedIndex =
-					current != null ? query.data.indexOf(current) : -1;
+					current != null
+						? query.data.map((entry) => entry.relativePath).indexOf(current)
+						: -1;
 				const newHighlightedIndex = clamp(
 					0,
 					query.data.length - 1,
 				)(currentHighlightedIndex + indexDelta);
-				return query.data[newHighlightedIndex];
+				return query.data[newHighlightedIndex].relativePath;
 			});
 		}
 	});
@@ -150,7 +128,9 @@ export function Browser(props: Props) {
 		if (highlightedKey == null || query.data == null) {
 			return;
 		}
-		const highlightedKeyIndex = query.data.indexOf(highlightedKey);
+		const highlightedKeyIndex = query.data
+			.map((entry) => entry.relativePath)
+			.indexOf(highlightedKey);
 		// In case we reach the bottom of the scrollbox, scroll down. Don't scroll down when the thing we're selecting is already visible.
 		const { current: scrollbox } = scrollboxRef;
 
@@ -295,13 +275,14 @@ export function Browser(props: Props) {
 						// biome-ignore lint/a11y/noStaticElementInteractions: <explanation>
 						<box
 							style={{
-								backgroundColor: entry === highlightedKey ? "red" : undefined,
+								backgroundColor:
+									entry.relativePath === highlightedKey ? "red" : undefined,
 							}}
-							key={entry}
+							key={entry.relativePath}
 							paddingLeft={1}
-							onMouseDown={() => setHighlightedKey(entry)}
+							onMouseDown={() => setHighlightedKey(entry.relativePath)}
 						>
-							<text>{entry}</text>
+							<text>{entry.relativePath}</text>
 						</box>
 					))}
 				</scrollbox>
