@@ -18,8 +18,45 @@ brew install red-cli
 
 ## Usage
 ```sh
-red --connection-string "redis://localhost:6379"
+red --connection-string="redis://localhost:6379"
 ```
+
+## Command line arguments
+Run `red --help` to see all available command line arguments.
+
+## Configuration
+Configuration can be provided in multiple ways. In decreasing order of precedence:
+1. Command line arguments
+2. Environment variables
+3. Configuration file
+4. Built-in defaults
+
+### Environment variables
+- `RED_CONNECTION_STRING`: The Redis connection string (e.g. `redis://localhost:6379`)
+
+### Configuration file
+Create a configaration file in the directory where you run `red`. The following filenames are supported:
+
+.redrc
+.redrc.json
+.redrc.yaml
+.redrc.yml
+.redrc.js
+.redrc.ts
+.redrc.cjs
+red.config.js
+red.config.ts
+red.config.cjs
+
+Eg:
+```json
+{
+    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.5/.redrc.schema.json",
+    "connectionString": "redis://localhost:6379"
+}
+```
+
+### 
 
 ## Development
 Initialize the repository:

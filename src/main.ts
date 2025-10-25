@@ -2,7 +2,7 @@ import process from "node:process";
 import { render } from "@opentui/react";
 import z from "zod";
 import { App } from "./app";
-import { getConfig, loadConfig } from "./config";
+import { loadConfig } from "./config";
 import { initRedis } from "./redis";
 
 try {
@@ -13,12 +13,6 @@ try {
 		process.exit(1);
 	}
 	throw error;
-}
-
-if (getConfig().showVersion) {
-	const { version } = await import("./version.json");
-	console.log(version);
-	process.exit(0);
 }
 
 initRedis();

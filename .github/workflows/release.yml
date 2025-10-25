@@ -79,6 +79,34 @@ jobs:
           path: ./release-artifacts/${{ matrix.binary_name }}
           retention-days: 1
 
+  build-config-schema:
+    name: Build Config Schema
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
+
+      - name: Setup repository
+        run: |
+          chmod +x ./scripts/init.sh
+          ./scripts/init.sh
+        shell: bash
+
+      - name: Generate Config Schema
+        run: ./scripts/generate-config-schema.sh
+
+      - name: Upload Config Schema artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: config-schema
+          path: ./generated/.redrc.schema.json
+
   release:
     name: Create Release
     needs: build
@@ -127,6 +155,16 @@ jobs:
             5. Run: `./red-*` or just `red` if in PATH
 
             Built from commit: ${{ github.sha }}
+
+      - name: Upload config schema
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: ./generated/.redrc.schema.json
+          asset_name: .redrc.schema.json
+          asset_content_type: application/json
 
       - name: Upload Linux x64 binary
         uses: actions/upload-release-asset@v1

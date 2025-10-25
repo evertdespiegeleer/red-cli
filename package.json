@@ -12,6 +12,7 @@
     "@types/bun": "latest",
     "@types/command-line-usage": "^5.0.4",
     "@types/react": "^19.2.2",
+    "@types/yargs": "^17.0.34",
     "typescript": "^5.9.3"
   },
   "dependencies": {
@@ -21,8 +22,11 @@
     "clipboardy": "^5.0.0",
     "color": "^5.0.2",
     "command-line-usage": "^7.0.3",
+    "cosmiconfig": "^9.0.0",
+    "cosmiconfig-typescript-loader": "^6.2.0",
     "ioredis": "^5.8.1",
     "react": "^19.2.0",
+    "yargs": "^18.0.0",
     "zod": "^4.1.12"
   },
   "private": true,

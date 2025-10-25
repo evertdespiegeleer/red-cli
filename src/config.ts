@@ -1,72 +1,88 @@
 import process from "node:process";
+import { cosmiconfigSync } from "cosmiconfig";
+import { TypeScriptLoader } from "cosmiconfig-typescript-loader";
+import { hideBin } from "yargs/helpers";
+import yargs from "yargs/yargs";
 import { z } from "zod";
+import { version } from "./version.json";
 
-interface CLIArg {
-	name: string;
-	configName: string;
+type ConfigOption = {
 	shorthand?: string;
+};
+
+const configOptions = {
+	connectionString: {},
+} satisfies Record<string, ConfigOption>;
+
+type ConfigOptionNames = keyof typeof configOptions;
+
+declare module "zod" {
+	interface GlobalMeta {
+		hideFromSchema?: boolean;
+		description?: string;
+		shorthand?: string;
+	}
 }
 
-const cliArgs = [
-	// { name: "help", shorthand: "h", configName: "showHelp" },
-	{ name: "version", shorthand: "v", configName: "showVersion" },
-	{ name: "connection-string", configName: "connectionString" },
-] as const satisfies CLIArg[];
-
-type CLIArgConfigName = (typeof cliArgs)[number]["configName"];
-
-export const zCliConfig = z.object({
+// Use the `hideFromSchema` meta property to hide options from the generated JSON Schema
+export const zConfig = z.object({
 	connectionString: z
 		.string()
 		.regex(/^rediss?:\/\/.+/)
-		.default("redis://localhost:6379"),
-	// showHelp: z.boolean().default(false),
-	showVersion: z.boolean().default(false),
-} satisfies Record<CLIArgConfigName, z.ZodTypeAny>);
+		.default("redis://localhost:6379")
+		.meta({
+			description: "The Redis connection string",
+		}),
+} satisfies Record<ConfigOptionNames, z.ZodTypeAny>);
 
-let env: z.infer<typeof zCliConfig> | null = null;
+type Config = z.infer<typeof zConfig>;
 
-export const loadConfig = () => {
-	const args = process.argv;
-	const plainConfig: Record<string, string | boolean> = {};
+let config: Config | null = null;
 
-	let cursor = 0;
-	while (cursor < args.length) {
-		const arg = args[cursor];
-		if (!arg?.startsWith("-")) {
-			cursor++;
-			continue;
-		}
-		const isShorthand = arg.startsWith("-") && !arg.startsWith("--");
-		const argKey = arg.replace(/^-+/, "");
-		const configName = !isShorthand
-			? cliArgs.find((a) => a.name === argKey)?.configName
-			: cliArgs.find((a) => "shorthand" in a && a.shorthand === argKey)
-					?.configName;
-		if (configName == null) {
-			// Unrecognized argument!
-			throw new Error(`Unrecognized CLI argument: ${arg}`);
-		}
-		// Determine the value
-		let argValue: string | boolean = true;
-		const nextArg = args[cursor + 1];
-		if (nextArg == null || nextArg.startsWith("-")) {
-			// Next arg is another flag, so this is a boolean flag
-			argValue = true;
-			cursor += 1;
-		} else {
-			// Next arg is a value for this arg
-			argValue = nextArg;
-			cursor += 2;
-		}
-		plainConfig[configName] = argValue;
+export const getConfig = (): Config => {
+	if (!config) {
+		throw new Error("Config not loaded. Call loadConfig() first.");
 	}
-	env = zCliConfig.parse(plainConfig);
+	return config;
 };
 
-export const getConfig = () => {
-	if (!env) {
-		throw new Error("Config not loaded");
+const moduleName = "red";
+export const loadConfig = () => {
+	const explorer = cosmiconfigSync("red", {
+		loaders: {
+			".ts": TypeScriptLoader(),
+		},
+		searchPlaces: [
+			`.${moduleName}rc`,
+			`.${moduleName}rc.json`,
+			`.${moduleName}rc.yaml`,
+			`.${moduleName}rc.yml`,
+			`.${moduleName}rc.js`,
+			`.${moduleName}rc.ts`,
+			`.${moduleName}rc.cjs`,
+			`${moduleName}.config.js`,
+			`${moduleName}.config.ts`,
+			`${moduleName}.config.cjs`,
+		],
+	});
+	const configFileConfig = explorer.search()?.config || {};
+
+	let argv = yargs(hideBin(process.argv))
+		.config(configFileConfig)
+		.version(version)
+		.env("RED");
+
+	for (const [configName, configOption] of Object.entries(zConfig.shape) as [
+		keyof typeof zConfig.shape,
+		(typeof zConfig.shape)[keyof typeof zConfig.shape],
+	][]) {
+		const metadata = configOption.meta();
+		argv = argv.option(configName, {
+			alias: metadata?.shorthand,
+			describe: metadata?.description,
+			type: configOption.def.innerType.type,
+		});
+		console.log(argv);
 	}
-	return env;
+	config = zConfig.parse(argv.argv);
 };
