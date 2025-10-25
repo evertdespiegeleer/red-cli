@@ -87,10 +87,10 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Bun
-        uses: oven-sh/setup-bun@v2
+      - name: Setup Node
+        uses: actions/setup-node@v3
         with:
-          bun-version: latest
+          node-version: "24"
 
       - name: Setup repository
         run: |
@@ -99,7 +99,7 @@ jobs:
         shell: bash
 
       - name: Generate Config Schema
-        run: ./scripts/generate-config-schema.sh
+        run: ./scripts/generate-config-json-schema.ts
 
       - name: Upload Config Schema artifact
         uses: actions/upload-artifact@v4
