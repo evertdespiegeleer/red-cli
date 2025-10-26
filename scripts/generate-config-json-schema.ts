@@ -32,4 +32,4 @@ writeFileSync(
 	JSON.stringify(schema, null, 4),
 );
 
-console.log("Generated JSON Schema written to ./generated/.redrc.schema.json");
+console.log("Generated JSON Schema written to ./generated/redrc.schema.json");

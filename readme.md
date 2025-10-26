@@ -51,7 +51,7 @@ red.config.cjs
 Eg:
 ```json
 {
-    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.5/.redrc.schema.json",
+    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.5/redrc.schema.json",
     "connectionString": "redis://localhost:6379"
 }
 ```
