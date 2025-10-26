@@ -3,7 +3,7 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "bun run --watch ./src/main.ts",
+    "dev": "NODE_ENV=development bun run --watch ./src/main.ts",
     "build": "bun build --compile ./src/main.ts --outfile ./dist/bin/red",
     "lint-format": "bunx @biomejs/biome check ./src --fix"
   },
