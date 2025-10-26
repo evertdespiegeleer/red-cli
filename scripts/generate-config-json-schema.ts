@@ -3,6 +3,7 @@
 // This script generates the JSON Schema for the configuration. It is intended to be run in the CI, after which the output can be included in the release artifacts. This way, users can refer to it when writing their configuration files.
 
 import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import z from "zod";
 import { zConfig } from "../src/config.js";
 
@@ -20,11 +21,14 @@ if (schema.properties) {
 	}
 }
 
+const __dirname = path.dirname(new URL(import.meta.url).pathname);
+const generatedDirPath = path.resolve(__dirname, "..", "generated");
+
 // Write to ./generated/.redrc.schema.json
-mkdirSync("./generated", { recursive: true });
+mkdirSync(generatedDirPath, { recursive: true });
 
 writeFileSync(
-	"./generated/.redrc.schema.json",
+	path.join(generatedDirPath, ".redrc.schema.json"),
 	JSON.stringify(schema, null, 4),
 );
 
