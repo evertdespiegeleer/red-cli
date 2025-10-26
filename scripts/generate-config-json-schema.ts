@@ -28,7 +28,7 @@ const generatedDirPath = path.resolve(__dirname, "..", "generated");
 mkdirSync(generatedDirPath, { recursive: true });
 
 writeFileSync(
-	path.join(generatedDirPath, ".redrc.schema.json"),
+	path.join(generatedDirPath, "redrc.schema.json"),
 	JSON.stringify(schema, null, 4),
 );
 
