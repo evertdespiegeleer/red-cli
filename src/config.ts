@@ -82,7 +82,6 @@ export const loadConfig = () => {
 			describe: metadata?.description,
 			type: configOption.def.innerType.type,
 		});
-		console.log(argv);
 	}
 	config = zConfig.parse(argv.argv);
 };

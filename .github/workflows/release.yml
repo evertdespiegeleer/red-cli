@@ -1,21 +1,12 @@
 name: Build and Release
 
 on:
-  workflow_dispatch:
-    inputs:
-      release_title:
-        description: "Release title"
-        required: true
-        type: string
-      release_tag:
-        description: "Release tag (e.g., v1.0.0)"
-        required: true
-        type: string
-      prerelease:
-        description: "Mark as prerelease"
-        required: false
-        type: boolean
-        default: false
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [created]
 
 jobs:
   build:
@@ -57,7 +48,11 @@ jobs:
 
       - name: Override ./src/version.json
         run: |
-          echo '{ "version": "${{ github.event.inputs.release_tag }}" }' > ./src/version.json
+          if [ "${{ github.event_name }}" = "release" ]; then
+            echo '{ "version": "${{ github.event.release.tag_name }}" }' > ./src/version.json
+          else
+            echo '{ "version": "dev-${{ github.sha }}" }' > ./src/version.json
+          fi
 
       - name: Build binary
         run: bun run build
@@ -106,10 +101,11 @@ jobs:
           name: config-schema
           path: ./generated/.redrc.schema.json
 
-  release:
-    name: Create Release
-    needs: build
+  upload-to-release:
+    name: Upload Assets to Release
+    needs: [build, build-config-schema]
     runs-on: ubuntu-latest
+    if: github.event_name == 'release'
     permissions:
       contents: write
 
@@ -125,43 +121,13 @@ jobs:
       - name: Display structure of downloaded files
         run: ls -la ./release-artifacts/
 
-      - name: Create Release
-        id: create_release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          tag_name: ${{ github.event.inputs.release_tag }}
-          release_name: ${{ github.event.inputs.release_title }}
-          draft: false
-          prerelease: ${{ github.event.inputs.prerelease }}
-          body: |
-            ## ${{ github.event.inputs.release_title }}
-
-            ### Downloads
-            Choose the appropriate binary for your platform:
-            - **Linux (x64)**: `red-linux-x64`
-            - **Linux (ARM64)**: `red-linux-arm64`
-            - **macOS (Intel)**: `red-darwin-x64`
-            - **macOS (Apple Silicon)**: `red-darwin-arm64`
-            - **Windows (x64)**: `red-win32-x64.exe`
-
-            ### Installation
-            1. Download the appropriate binary for your platform
-            2. Make it executable (Linux/macOS): `chmod +x red-*`
-            3. On macOS, dequarantine the binary if necessary: `xattr -d com.apple.quarantine red-*`
-            4. Move to a directory in your PATH (optional)
-            5. Run: `./red-*` or just `red` if in PATH
-
-            Built from commit: ${{ github.sha }}
-
       - name: Upload config schema
         uses: actions/upload-release-asset@v1
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
-          asset_path: ./generated/.redrc.schema.json
+          upload_url: ${{ github.event.release.upload_url }}
+          asset_path: ./release-artifacts/config-schema/.redrc.schema.json
           asset_name: .redrc.schema.json
           asset_content_type: application/json
 
@@ -170,7 +136,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./release-artifacts/red-linux-x64/red-linux-x64
           asset_name: red-linux-x64
           asset_content_type: application/octet-stream
@@ -180,7 +146,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./release-artifacts/red-linux-arm64/red-linux-arm64
           asset_name: red-linux-arm64
           asset_content_type: application/octet-stream
@@ -190,7 +156,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./release-artifacts/red-darwin-x64/red-darwin-x64
           asset_name: red-darwin-x64
           asset_content_type: application/octet-stream
@@ -200,7 +166,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./release-artifacts/red-darwin-arm64/red-darwin-arm64
           asset_name: red-darwin-arm64
           asset_content_type: application/octet-stream
@@ -210,7 +176,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
-          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          upload_url: ${{ github.event.release.upload_url }}
           asset_path: ./release-artifacts/red-win32-x64.exe/red-win32-x64.exe
           asset_name: red-win32-x64.exe
           asset_content_type: application/octet-stream
