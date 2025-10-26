@@ -95,6 +95,11 @@ export function Browser(props: Props) {
 	const search = usePropagate("");
 	const { setRoute } = useRoute();
 
+	// biome-ignore lint/correctness/useExhaustiveDependencies: Whenever the path changes, we want to clear the search
+	useEffect(() => {
+		search.clear();
+	}, [props.path]);
+
 	const [focus, setFocus] = useState<(typeof focusItems)[number]>("key-list");
 
 	// const [showRecursive, setShowRecursive] = useState(false);
@@ -136,9 +141,9 @@ export function Browser(props: Props) {
 				promises.push(redisUtils.getDirectChildGroups());
 			}
 			const allEntries = await Promise.all(promises).then((e) => e.flat());
-			return allEntries.sort((a, b) =>
-				a.relativePath.localeCompare(b.relativePath),
-			);
+			return allEntries
+				.filter((entry) => entry.baseName.includes(search.propagatedValue))
+				.sort((a, b) => a.relativePath.localeCompare(b.relativePath));
 		},
 	});
 
