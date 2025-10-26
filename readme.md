@@ -17,12 +17,11 @@ brew install red-cli
 ```
 
 ## Usage
+Simply run `red` command, potentially providing certain configuration options.
+
 ```sh
 red --connection-string="redis://localhost:6379"
 ```
-
-## Command line arguments
-Run `red --help` to see all available command line arguments.
 
 ## Configuration
 Configuration can be provided in multiple ways. In decreasing order of precedence:
@@ -30,6 +29,9 @@ Configuration can be provided in multiple ways. In decreasing order of precedenc
 2. Environment variables
 3. Configuration file
 5. Built-in defaults
+
+### Command line arguments
+Run `red --help` to see all available command line arguments.
 
 ### Environment variables
 - `RED_CONNECTION_STRING`: The Redis connection string (e.g. `redis://localhost:6379`)
