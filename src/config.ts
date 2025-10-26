@@ -1,4 +1,4 @@
-import process from "node:process";
+import process, { exit } from "node:process";
 import { cosmiconfigSync } from "cosmiconfig";
 import { TypeScriptLoader } from "cosmiconfig-typescript-loader";
 import { hideBin } from "yargs/helpers";
@@ -49,6 +49,7 @@ export const getConfig = (): Config => {
 const moduleName = "red";
 export const loadConfig = () => {
 	const explorer = cosmiconfigSync("red", {
+		searchStrategy: "global",
 		loaders: {
 			".ts": TypeScriptLoader(),
 		},
