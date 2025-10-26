@@ -38,7 +38,7 @@ Run `red --help` to see all available command line arguments.
 - `RED_DELIMITER`: The delimiter used to group keys (default: `:`)
 
 ### Configuration file
-A configuration file can be placed either in the directory where Red is executed, or in any higher-level directory, up to the user's home directory. Lower level configuration files take precedence over higher-level ones.
+A configuration file can be placed either in the directory where Red is executed, or in any higher-level directory, up to your home directory. Lower level configuration files take precedence over higher-level ones.
 The following file names are supported:
 
 - .redrc

@@ -55,29 +55,44 @@ export class RedisUtils {
 	getChildGroups = async (params: {
 		depth: number;
 	}): Promise<KeyReturnType[]> => {
+		// We essentally have to scan over all keys in order to find groups. Not just one extra level down, because a key existing 2 extra levels down does mean that the intermediate level is a group.
 		const groups = new Map<string, KeyReturnType>();
-		// If we're looking for N levels deep groups, that means that the keys are N+1 levels deep
-		const relevantKeys = await this.getChildKeys({ depth: params.depth + 1 });
-		for (const key of relevantKeys) {
-			// Remove the last section to get the group name
-			const fullPath = key.fullPath
-				.split(this.delimiter)
-				.slice(0, -1)
-				.join(this.delimiter);
-			const pathPrefix =
-				this.path.length > 0 ? `${this.path}${this.delimiter}` : "";
-			const relativePath = fullPath.slice(pathPrefix.length);
-			if (relativePath === "") {
-				continue;
-			}
-			groups.set(fullPath, {
-				fullPath,
-				relativePath,
-				baseName: relativePath.split(this.delimiter).slice(-1)[0],
-				isGroup: true,
+		const scanStream = this.redis.scanStream({
+			match: [this.path, "*"].filter(Boolean).join(this.delimiter),
+		});
+		return new Promise<KeyReturnType[]>((resolve, reject) => {
+			scanStream.on("end", () => resolve([...groups.values()]));
+			scanStream.on("error", (error) => reject(error));
+			scanStream.on("data", (bunchOfKeys: string[]) => {
+				for (const fullKey of bunchOfKeys) {
+					const pathPrefix =
+						this.path.length > 0 ? `${this.path}${this.delimiter}` : "";
+
+					const relativeKey = fullKey.slice(pathPrefix.length);
+					let relativeKeySections = relativeKey.split(this.delimiter);
+					relativeKeySections.pop(); // Remove last section, as that is the key itself, not a group
+
+					relativeKeySections = relativeKeySections.slice(0, params.depth); // Limit to depth
+
+					if (relativeKeySections.length === 0) {
+						continue;
+					}
+
+					for (let i = 0; i < relativeKeySections.length; i++) {
+						const baseName = relativeKeySections[i];
+						const groupRelativePath = relativeKeySections.slice(0, i + 1);
+						const relativePath = groupRelativePath.join(this.delimiter);
+						const fullPath = [pathPrefix, relativePath].join("");
+						groups.set(fullPath, {
+							baseName,
+							relativePath,
+							fullPath,
+							isGroup: true,
+						});
+					}
+				}
 			});
-		}
-		return [...groups.values()];
+		});
 	};
 
 	getDirectChildKeys = (): Promise<KeyReturnType[]> => {
