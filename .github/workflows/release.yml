@@ -95,11 +95,16 @@ jobs:
       - name: Generate Config Schema
         run: ./scripts/generate-config-json-schema.ts
 
+      - name: Copy to ./release-artifacts/.redrc.schema.json
+        run: |
+          mkdir -p ./release-artifacts
+          cp ./generated/.redrc.schema.json ./release-artifacts/.redrc.schema.json
+
       - name: Upload Config Schema artifact
         uses: actions/upload-artifact@v4
         with:
-          name: config-schema
-          path: ./generated/.redrc.schema.json
+          name: .redrc.schema.json
+          path: ./release-artifacts/.redrc.schema.json
 
   upload-to-release:
     name: Upload Assets to Release
