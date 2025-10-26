@@ -87,14 +87,13 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Setup Node
-        uses: actions/setup-node@v3
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
         with:
-          node-version: "24"
+          bun-version: latest
 
       - name: Setup repository
         run: |
-          chmod +x ./scripts/init.sh
           ./scripts/init.sh
         shell: bash
 
