@@ -39,16 +39,16 @@ Configuration can be provided in multiple ways. In decreasing order of precedenc
 A configuration file can be placed either in the directory where Red is executed, or in any higher-level directory, up to the user's home directory. Lower level configuration files take precedence over higher-level ones.
 The following file names are supported:
 
-.redrc
-.redrc.json
-.redrc.yaml
-.redrc.yml
-.redrc.js
-.redrc.ts
-.redrc.cjs
-red.config.js
-red.config.ts
-red.config.cjs
+- .redrc
+- .redrc.json
+- .redrc.yaml
+- .redrc.yml
+- .redrc.js
+- .redrc.ts
+- .redrc.cjs
+- red.config.js
+- red.config.ts
+- red.config.cjs
 
 Use the json schema as reference for the configuration file structure. Mind the version in the `$schema` property!
 Below is an example `.redrc.json` file:
