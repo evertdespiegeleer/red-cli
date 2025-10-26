@@ -1,38 +1,42 @@
 name: Checks
 
 on:
-    push:
+  push:
+    branches:
+      - "**"
+    tags-ignore:
+      - "**"
 
 jobs:
-    pre-commit:
-        permissions:
-            contents: write
-        runs-on: ubuntu-latest
+  pre-commit:
+    permissions:
+      contents: write
+    runs-on: ubuntu-latest
 
-        steps:
-            - name: Checkout code
-              uses: actions/checkout@v4
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
 
-            - name: Setup Bun
-              uses: oven-sh/setup-bun@v2
-              with:
-                  bun-version: latest
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v2
+        with:
+          bun-version: latest
 
-            - name: Prep repository
-              run: ./scripts/init.sh
+      - name: Prep repository
+        run: ./scripts/init.sh
 
-            - name: Run pre-commit checks
-              run: ./.hooks/pre-commit
+      - name: Run pre-commit checks
+        run: ./.hooks/pre-commit
 
-            - name: Commit changes
-              run: |
-                  git config --global user.name "GitHub Actions"
-                  git config --global user.email "actions@github.com"
-                  git add -A
-                  git commit -m "chore: apply pre-commit fixes" || echo "No changes to commit"
+      - name: Commit changes
+        run: |
+          git config --global user.name "GitHub Actions"
+          git config --global user.email "actions@github.com"
+          git add -A
+          git commit -m "chore: apply pre-commit fixes" || echo "No changes to commit"
 
-            - name: Show git status
-              run: git status
+      - name: Show git status
+        run: git status
 
-            - name: Push changes
-              run: git push
+      - name: Push changes
+        run: git push
