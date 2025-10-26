@@ -1,4 +1,4 @@
-import process, { exit } from "node:process";
+import process from "node:process";
 import { cosmiconfigSync } from "cosmiconfig";
 import { TypeScriptLoader } from "cosmiconfig-typescript-loader";
 import { hideBin } from "yargs/helpers";
