@@ -3,6 +3,7 @@ import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
 import { useEffect, useRef, useState } from "react";
+import { getConfig } from "../../../config";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
@@ -242,7 +243,9 @@ export function Browser(props: Props) {
 		}
 		if (key.name === "escape") {
 			key.preventDefault();
-			const newRoute = props.path.split(":").slice(0, -1).join(":");
+			// Go up one level
+			const { delimiter } = getConfig();
+			const newRoute = props.path.split(delimiter).slice(0, -1).join(delimiter);
 			setRoute(new BrowserRoute(newRoute));
 		}
 	});

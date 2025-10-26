@@ -1,3 +1,4 @@
+import { getConfig } from "../config";
 import type { getRedis } from "../redis";
 
 export type KeyReturnType = {
@@ -8,19 +9,23 @@ export type KeyReturnType = {
 };
 
 export class RedisUtils {
+	private delimiter: string = ":";
+
 	constructor(
 		private redis: ReturnType<typeof getRedis>,
 		private path: string,
 	) {
-		if (path.endsWith(":")) {
-			throw new Error("Path should not end with a colon");
+		const { delimiter } = getConfig();
+		this.delimiter = delimiter;
+		if (path.endsWith(delimiter)) {
+			throw new Error(`Path should not end with delimiter ${this.delimiter}`);
 		}
 	}
 
 	getChildKeys = (params: { depth: number }) => {
 		const keys = new Set<KeyReturnType>();
 		const scanStream = this.redis.scanStream({
-			match: [this.path, "*"].filter(Boolean).join(":"),
+			match: [this.path, "*"].filter(Boolean).join(this.delimiter),
 		});
 
 		return new Promise<KeyReturnType[]>((resolve, reject) => {
@@ -28,10 +33,11 @@ export class RedisUtils {
 			scanStream.on("error", (error) => reject(error));
 			scanStream.on("data", (bunchOfKeys: string[]) => {
 				for (const fullKey of bunchOfKeys) {
-					const pathPrefix = this.path.length > 0 ? `${this.path}:` : "";
+					const pathPrefix =
+						this.path.length > 0 ? `${this.path}${this.delimiter}` : "";
 					const relativeKey = fullKey.slice(pathPrefix.length);
 
-					const relativeKeySections = relativeKey.split(":");
+					const relativeKeySections = relativeKey.split(this.delimiter);
 
 					if (relativeKeySections.length <= params.depth) {
 						keys.add({
@@ -54,8 +60,12 @@ export class RedisUtils {
 		const relevantKeys = await this.getChildKeys({ depth: params.depth + 1 });
 		for (const key of relevantKeys) {
 			// Remove the last section to get the group name
-			const fullPath = key.fullPath.split(":").slice(0, -1).join(":");
-			const pathPrefix = this.path.length > 0 ? `${this.path}:` : "";
+			const fullPath = key.fullPath
+				.split(this.delimiter)
+				.slice(0, -1)
+				.join(this.delimiter);
+			const pathPrefix =
+				this.path.length > 0 ? `${this.path}${this.delimiter}` : "";
 			const relativePath = fullPath.slice(pathPrefix.length);
 			if (relativePath === "") {
 				continue;
@@ -63,7 +73,7 @@ export class RedisUtils {
 			groups.set(fullPath, {
 				fullPath,
 				relativePath,
-				baseName: relativePath.split(":").slice(-1)[0],
+				baseName: relativePath.split(this.delimiter).slice(-1)[0],
 				isGroup: true,
 			});
 		}

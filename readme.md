@@ -33,6 +33,7 @@ Configuration can be provided in multiple ways. In decreasing order of precedenc
 
 ### Environment variables
 - `RED_CONNECTION_STRING`: The Redis connection string (e.g. `redis://localhost:6379`)
+- `RED_DELIMITER`: The delimiter used to group keys (default: `:`)
 
 ### Configuration file
 A configuration file can be placed either in the directory where Red is executed, or in any higher-level directory, up to the user's home directory. Lower level configuration files take precedence over higher-level ones.
@@ -53,7 +54,7 @@ Use the json schema as reference for the configuration file structure. Mind the 
 Below is an example `.redrc.json` file:
 ```json
 {
-    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.5/redrc.schema.json",
+    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.8/redrc.schema.json",
     "connectionString": "redis://localhost:6379"
 }
 ```

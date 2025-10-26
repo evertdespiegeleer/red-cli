@@ -6,21 +6,12 @@ import yargs from "yargs/yargs";
 import { z } from "zod";
 import { version } from "./version.json";
 
-type ConfigOption = {
-	shorthand?: string;
-};
-
-const configOptions = {
-	connectionString: {},
-} satisfies Record<string, ConfigOption>;
-
-type ConfigOptionNames = keyof typeof configOptions;
-
 declare module "zod" {
 	interface GlobalMeta {
 		hideFromSchema?: boolean;
 		description?: string;
 		shorthand?: string;
+		default?: unknown;
 	}
 }
 
@@ -33,7 +24,11 @@ export const zConfig = z.object({
 		.meta({
 			description: "The Redis connection string",
 		}),
-} satisfies Record<ConfigOptionNames, z.ZodTypeAny>);
+	delimiter: z.string().nonempty().default(":").meta({
+		description: "The delimiter used to group keys",
+		shorthand: "d",
+	}),
+});
 
 type Config = z.infer<typeof zConfig>;
 
@@ -71,6 +66,8 @@ export const loadConfig = () => {
 	let argv = yargs(hideBin(process.argv))
 		.config(configFileConfig)
 		.version(version)
+		.help()
+		.wrap(Math.min(120, process.stdout.columns - 1))
 		.env("RED");
 
 	for (const [configName, configOption] of Object.entries(zConfig.shape) as [
@@ -82,6 +79,7 @@ export const loadConfig = () => {
 			alias: metadata?.shorthand,
 			describe: metadata?.description,
 			type: configOption.def.innerType.type,
+			default: configOption.def.defaultValue,
 		});
 	}
 	config = zConfig.parse(argv.argv);
