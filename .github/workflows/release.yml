@@ -27,9 +27,9 @@ jobs:
           - os: macos-14 # Apple Silicon
             target: darwin-arm64
             binary_name: red-darwin-arm64
-          - os: windows-latest
-            target: win32-x64
-            binary_name: red-win32-x64.exe
+          # - os: windows-latest
+          #   target: win32-x64
+          #   binary_name: red-win32-x64.exe
 
     steps:
       - name: Checkout code
@@ -171,12 +171,12 @@ jobs:
           asset_name: red-darwin-arm64
           asset_content_type: application/octet-stream
 
-      - name: Upload Windows x64 binary
-        uses: actions/upload-release-asset@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ github.event.release.upload_url }}
-          asset_path: ./release-artifacts/red-win32-x64.exe/red-win32-x64.exe
-          asset_name: red-win32-x64.exe
-          asset_content_type: application/octet-stream
+      # - name: Upload Windows x64 binary
+      #   uses: actions/upload-release-asset@v1
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      #   with:
+      #     upload_url: ${{ github.event.release.upload_url }}
+      #     asset_path: ./release-artifacts/red-win32-x64.exe/red-win32-x64.exe
+      #     asset_name: red-win32-x64.exe
+      #     asset_content_type: application/octet-stream
