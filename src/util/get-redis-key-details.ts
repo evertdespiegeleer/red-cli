@@ -20,6 +20,13 @@ type ListReturn = {
 
 type ReturnType = StringReturn | HashReturn | ListReturn;
 
+export class UnsupportedRedisKeyTypeError extends Error {
+	constructor(public type: string) {
+		super(`Unsupported Redis key type: ${type}`);
+		this.name = "UnsupportedRedisKeyTypeError";
+	}
+}
+
 export async function getRedisKeyDetails(key: string): Promise<ReturnType> {
 	const redis = getRedis();
 
@@ -50,6 +57,6 @@ export async function getRedisKeyDetails(key: string): Promise<ReturnType> {
 				ttl,
 			};
 		default:
-			throw new Error(`Unsupported Redis key type: ${type}`);
+			throw new UnsupportedRedisKeyTypeError(type);
 	}
 }

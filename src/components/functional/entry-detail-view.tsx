@@ -1,11 +1,16 @@
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
+import open from "open";
 import { useState } from "react";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
 import { bigNumberGroup } from "../../util/big-number-group";
 import { useExtendsTrueishDuration } from "../../util/extend-fetching-duration";
-import { getRedisKeyDetails } from "../../util/get-redis-key-details";
+import {
+	getRedisKeyDetails,
+	UnsupportedRedisKeyTypeError,
+} from "../../util/get-redis-key-details";
+import { gitRepoPath } from "../../util/git-repo";
 import { useInterval } from "../../util/use-interval";
 import { BoxTitle } from "../pure/box-title";
 import { RedisKeyType } from "../pure/redis-key-type";
@@ -20,7 +25,6 @@ export function EntryDetails(props: Props) {
 
 	const query = useQuery({
 		queryKey: ["redis", "key", props.pathKey],
-		throwOnError: true,
 		queryFn: async () => {
 			return await getRedisKeyDetails(props.pathKey);
 		},
@@ -71,7 +75,18 @@ export function EntryDetails(props: Props) {
 		>
 			<BoxTitle gap={1}>
 				<text fg="cyan">Key Details</text>
-				{query.data && <RedisKeyType type={query.data.type} />}
+
+				{query.data != null && <RedisKeyType type={query.data.type} />}
+				{query.error != null && (
+					<RedisKeyType
+						type={
+							query.error instanceof UnsupportedRedisKeyTypeError
+								? query.error.type
+								: "Unknown Type"
+						}
+					/>
+				)}
+
 				<text fg="yellow">{`[${props.pathKey}]`}</text>
 				{autoRefresh && <text fg="green">🔄</text>}
 				{useExtendsTrueishDuration(query.isFetching) && (
@@ -106,6 +121,22 @@ export function EntryDetails(props: Props) {
 					</box>
 				</box>
 			)}
+
+			{query.error != null &&
+				query.error instanceof UnsupportedRedisKeyTypeError && (
+					<box flexDirection="column">
+						<text fg="red">{`Unsupported Redis key type: ${query.error.type}`}</text>
+						<text>
+							In this version of Red, rendering for the "{query.error.type}" key
+							type is not yet supported. If you believe it should be, please
+							submit a Github issue.
+						</text>
+						{/* Link */}
+						<text fg="cyan">
+							<u>{gitRepoPath}/issues</u>
+						</text>
+					</box>
+				)}
 		</box>
 	);
 }
