@@ -18,7 +18,13 @@ type ListReturn = {
 	ttl?: number;
 };
 
-type ReturnType = StringReturn | HashReturn | ListReturn;
+type SetReturn = {
+	type: "set";
+	value: string[];
+	ttl?: number;
+};
+
+type ReturnType = StringReturn | HashReturn | ListReturn | SetReturn;
 
 export class UnsupportedRedisKeyTypeError extends Error {
 	constructor(public type: string) {
@@ -54,6 +60,12 @@ export async function getRedisKeyDetails(key: string): Promise<ReturnType> {
 			return {
 				type: "list",
 				value: await redis.lrange(key, 0, -1),
+				ttl,
+			};
+		case "set":
+			return {
+				type: "set",
+				value: await redis.smembers(key),
 				ttl,
 			};
 		default:
