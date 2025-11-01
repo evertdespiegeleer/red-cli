@@ -206,8 +206,8 @@ export function Browser(props: Props) {
 		if (autoRefresh) {
 			query.refetch();
 		}
-	}, 5000);
-	const [autoRefresh, setAutoRefresh] = useState(false);
+	}, getConfig().refreshInterval);
+	const [autoRefresh, setAutoRefresh] = useState(getConfig().autoRefresh);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {

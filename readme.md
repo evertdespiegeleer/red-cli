@@ -56,8 +56,12 @@ Use the json schema as reference for the configuration file structure. Mind the 
 Below is an example `.redrc.json` file:
 ```json
 {
-    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.8/redrc.schema.json",
-    "connectionString": "redis://localhost:6379"
+    "$schema": "https://github.com/evertdespiegeleer/red-cli/releases/download/v0.0.11/redrc.schema.json",
+    "connectionString": "redis://localhost:6379",
+    "delimiter": ":",
+    "path": "some:nested:path",
+    "autoRefresh": true,
+    "refreshInterval": 3000
 }
 ```
 

@@ -28,6 +28,17 @@ export const zConfig = z.object({
 		description: "The delimiter used to group keys",
 		shorthand: "d",
 	}),
+	path: z.string().default("").meta({
+		description: "The initial path to open in the browser",
+		shorthand: "p",
+	}),
+	autoRefresh: z.boolean().default(false).meta({
+		description: "Whether to auto-refresh the data in the UI",
+		shorthand: "r",
+	}),
+	refreshInterval: z.number().min(1000).default(5000).meta({
+		description: "The auto-refresh interval in milliseconds",
+	}),
 });
 
 type Config = z.infer<typeof zConfig>;

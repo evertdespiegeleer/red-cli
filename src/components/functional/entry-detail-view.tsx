@@ -2,6 +2,7 @@ import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
 import open from "open";
 import { useState } from "react";
+import { getConfig } from "../../config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
 import { bigNumberGroup } from "../../util/big-number-group";
@@ -47,8 +48,8 @@ export function EntryDetails(props: Props) {
 		if (autoRefresh) {
 			query.refetch();
 		}
-	}, 5000);
-	const [autoRefresh, setAutoRefresh] = useState(false);
+	}, getConfig().refreshInterval);
+	const [autoRefresh, setAutoRefresh] = useState(getConfig().autoRefresh);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {
