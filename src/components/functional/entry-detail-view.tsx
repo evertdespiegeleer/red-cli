@@ -1,6 +1,5 @@
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
-import open from "open";
 import { useState } from "react";
 import { getConfig } from "../../config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
