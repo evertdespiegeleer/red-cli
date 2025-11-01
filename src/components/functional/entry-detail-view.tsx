@@ -1,7 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useQuery } from "@tanstack/react-query";
-import { useState } from "react";
-import { getConfig } from "../../config";
+import { useRefreshConfig } from "../../contexts/refresh-config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
 import { bigNumberGroup } from "../../util/big-number-group";
@@ -43,12 +42,13 @@ export function EntryDetails(props: Props) {
 
 	useRegisterKeyBind("esc", "Go back");
 
+	const { autoRefresh, setAutoRefresh, refreshInterval } = useRefreshConfig();
+
 	useInterval(() => {
 		if (autoRefresh) {
 			query.refetch();
 		}
-	}, getConfig().refreshInterval);
-	const [autoRefresh, setAutoRefresh] = useState(getConfig().autoRefresh);
+	}, refreshInterval);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {

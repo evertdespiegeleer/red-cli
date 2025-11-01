@@ -4,6 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
 import { useEffect, useRef, useState } from "react";
 import { getConfig } from "../../../config";
+import { useRefreshConfig } from "../../../contexts/refresh-config";
 import { useRegisterKeyBind } from "../../../contexts/registered-keybinds";
 import { getRedis } from "../../../redis";
 import { useRoute } from "../../../routing/provider";
@@ -202,12 +203,13 @@ export function Browser(props: Props) {
 		scrollbox.scrollTo(scrollbox.scrollTop + outOfBoundsDiff);
 	}, [highlightedKeyFullPath, query.data]);
 
+	const { autoRefresh, setAutoRefresh } = useRefreshConfig();
+
 	useInterval(() => {
 		if (autoRefresh) {
 			query.refetch();
 		}
 	}, getConfig().refreshInterval);
-	const [autoRefresh, setAutoRefresh] = useState(getConfig().autoRefresh);
 	useRegisterKeyBind("ctrl+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {
