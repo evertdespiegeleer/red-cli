@@ -1,6 +1,7 @@
 import { RGBA } from "@opentui/core";
+import type { BoxProps } from "@opentui/react";
 
-export function Logo(props: { big?: boolean }) {
+export function Logo(props: { big?: boolean; style?: BoxProps["style"] }) {
 	const logoPatternBig = `
 		██████  ██████  ████  
 		██  ██  ██      ██  ██
@@ -13,7 +14,7 @@ export function Logo(props: { big?: boolean }) {
 	`;
 
 	return (
-		<box flexDirection="column">
+		<box flexDirection="column" style={props.style}>
 			{(props.big ? logoPatternBig : logoPatternSmall)
 				.split(/[\n\t]+/)
 				.map((line, i) => (

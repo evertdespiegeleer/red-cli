@@ -10,13 +10,11 @@ export function Header() {
 
 	return (
 		<box
-			padding={1}
 			flexDirection="row"
 			justifyContent="space-between"
 			gap={5}
 			alignItems="center"
 			flexShrink={1}
-			minHeight={10}
 		>
 			{/* Leftish section */}
 			<box
@@ -26,7 +24,7 @@ export function Header() {
 				alignItems="center"
 				flexShrink={1}
 			>
-				<Logo big />
+				<Logo big style={{ padding: 1 }} />
 				<box flexDirection="row" gap={2}>
 					{/* Keybinds */}
 					<box flexDirection="column">
