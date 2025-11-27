@@ -65,6 +65,21 @@ export function EntryDetails(props: Props) {
 		}
 	});
 
+	useRegisterKeyBind("shift+c", "Copy value to clipboard");
+	useKeyboard((key) => {
+		if (!props.focussed) {
+			return;
+		}
+		if (key.name === "c" && key.shift) {
+			key.preventDefault();
+			if (query.data != null) {
+				navigator.clipboard.writeText(
+					JSON.stringify(query.data.value, null, 2),
+				);
+			}
+		}
+	});
+
 	return (
 		<box
 			borderColor="cyan"
