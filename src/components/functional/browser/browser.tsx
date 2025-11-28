@@ -210,7 +210,7 @@ export function Browser(props: Props) {
 			query.refetch();
 		}
 	}, getConfig().refreshInterval);
-	useRegisterKeyBind("ctrl+r", "Refresh");
+	useRegisterKeyBind("shift+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {
 		if (focus !== "key-list") {
@@ -218,7 +218,7 @@ export function Browser(props: Props) {
 		}
 		if (key.name === "r") {
 			key.preventDefault();
-			if (key.ctrl) {
+			if (key.shift) {
 				query.refetch();
 			} else {
 				setAutoRefresh((current) => !current);

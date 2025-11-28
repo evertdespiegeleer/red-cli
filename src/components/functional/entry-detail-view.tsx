@@ -1,5 +1,5 @@
 import { useKeyboard } from "@opentui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { useRefreshConfig } from "../../contexts/refresh-config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
@@ -29,6 +29,19 @@ export function EntryDetails(props: Props) {
 		},
 	});
 
+	const deleteMutation = useMutation({
+		mutationKey: ["redis", "delete-key", props.pathKey],
+		mutationFn: async () => {
+			// Delete the key
+			const redis = (await import("../../redis")).getRedis();
+			await redis.del(props.pathKey);
+		},
+		onSuccess: () => {
+			// Go back to previous route
+			router.previousRoute != null && router.setRoute(router.previousRoute);
+		},
+	});
+
 	useKeyboard((key) => {
 		if (!props.focussed) {
 			return;
@@ -49,7 +62,7 @@ export function EntryDetails(props: Props) {
 			query.refetch();
 		}
 	}, refreshInterval);
-	useRegisterKeyBind("ctrl+r", "Refresh");
+	useRegisterKeyBind("shift+r", "Refresh");
 	useRegisterKeyBind("r", `${autoRefresh ? "Disable" : "Enable"} auto-refresh`);
 	useKeyboard((key) => {
 		if (!props.focussed) {
@@ -57,7 +70,7 @@ export function EntryDetails(props: Props) {
 		}
 		if (key.name === "r") {
 			key.preventDefault();
-			if (key.ctrl) {
+			if (key.shift) {
 				query.refetch();
 			} else {
 				setAutoRefresh((current) => !current);
@@ -77,6 +90,17 @@ export function EntryDetails(props: Props) {
 					JSON.stringify(query.data.value, null, 2),
 				);
 			}
+		}
+	});
+
+	useRegisterKeyBind("shift+d", "Delete key");
+	useKeyboard((key) => {
+		if (!props.focussed) {
+			return;
+		}
+		if (key.name === "d" && key.shift) {
+			key.preventDefault();
+			deleteMutation.mutate();
 		}
 	});
 
