@@ -1,6 +1,6 @@
 import type { InputRenderable, ScrollBoxRenderable } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
-import { useQuery } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
 import { useEffect, useRef, useState } from "react";
 import { getConfig } from "../../../config";
@@ -149,6 +149,35 @@ export function Browser(props: Props) {
 		},
 	});
 
+	const keyDeleteMutation = useMutation({
+		mutationKey: ["redis", "key-delete"],
+		mutationFn: async (data: { fullKey: string }) => {
+			await getRedis().del(data.fullKey);
+		},
+		onSettled: () => {
+			query.refetch();
+		},
+	});
+
+	const groupDeleteMutation = useMutation({
+		mutationKey: ["redis", "group-delete"],
+		mutationFn: async (data: { groupPath: string }) => {
+			const redisUtils = new RedisUtils(getRedis(), data.groupPath);
+			const keysInGroup = await redisUtils.getRecursiveChildKeys();
+			if (keysInGroup.length === 0) {
+				return;
+			}
+			const pipeline = getRedis().pipeline();
+			for (const keyEntry of keysInGroup) {
+				pipeline.del(keyEntry.fullPath);
+			}
+			await pipeline.exec();
+		},
+		onSettled: () => {
+			query.refetch();
+		},
+	});
+
 	const [highlightedKeyFullPath, setHighlightedKeyFullPath] = useState<
 		string | undefined
 	>();
@@ -226,12 +255,12 @@ export function Browser(props: Props) {
 		}
 	});
 
-	useRegisterKeyBind("c", "Copy key to clipboard");
+	useRegisterKeyBind("shift+c", "Copy key to clipboard");
 	useKeyboard(async (key) => {
 		if (focus !== "key-list") {
 			return;
 		}
-		if (key.name === "c" && !key.ctrl && !key.meta) {
+		if (key.name === "c" && key.shift && !key.ctrl && !key.meta) {
 			key.preventDefault();
 			if (highlightedKeyFullPath != null) {
 				await clipboard.write(highlightedKeyFullPath);
@@ -280,6 +309,30 @@ export function Browser(props: Props) {
 				return;
 			}
 			setRoute(new RouteTypes.EntryDetails(highlightedKeyFullPath));
+		}
+	});
+
+	const highlightedEntry = query.data?.find(
+		(entry) => entry.fullPath === highlightedKeyFullPath,
+	);
+	useRegisterKeyBind(
+		"shift+d",
+		["Delete", highlightedEntry?.isGroup ? "group" : "key"].join(" "),
+	);
+	useKeyboard((key) => {
+		if (focus !== "key-list") {
+			return;
+		}
+		if (key.name === "d" && key.shift && !key.ctrl && !key.meta) {
+			key.preventDefault();
+			if (highlightedEntry == null) {
+				return;
+			}
+			if (!highlightedEntry.isGroup) {
+				keyDeleteMutation.mutate({ fullKey: highlightedEntry.fullPath });
+			} else {
+				groupDeleteMutation.mutate({ groupPath: highlightedEntry.fullPath });
+			}
 		}
 	});
 
