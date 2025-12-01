@@ -1,5 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import clipboard from "clipboardy";
 import { useRefreshConfig } from "../../contexts/refresh-config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
@@ -79,16 +80,14 @@ export function EntryDetails(props: Props) {
 	});
 
 	useRegisterKeyBind("shift+c", "Copy value to clipboard");
-	useKeyboard((key) => {
+	useKeyboard(async (key) => {
 		if (!props.focussed) {
 			return;
 		}
 		if (key.name === "c" && key.shift) {
 			key.preventDefault();
 			if (query.data != null) {
-				navigator.clipboard.writeText(
-					JSON.stringify(query.data.value, null, 2),
-				);
+				await clipboard.write(JSON.stringify(query.data.value, null, 2));
 			}
 		}
 	});
