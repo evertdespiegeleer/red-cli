@@ -23,7 +23,7 @@ export function Logo(props: { big?: boolean; style?: BoxProps["style"] }) {
 							// biome-ignore lint/suspicious/noArrayIndexKey: <explanation>
 							i
 						}`}
-						style={{ fg: RGBA.fromHex("#FF0000") }}
+						style={{ fg: RGBA.fromHex("#bb0e0e") }}
 						selectable={false}
 					>
 						{line}

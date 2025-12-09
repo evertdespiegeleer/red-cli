@@ -30,7 +30,7 @@ export function Header() {
 					<box flexDirection="column">
 						{Array.from(sortedKeyBinds).map((keyBind) => (
 							<box key={keyBind.keyCombination}>
-								<text fg="yellow">{`<${keyBind.keyCombination}>`}</text>
+								<text fg="#c7c719">{`<${keyBind.keyCombination}>`}</text>
 							</box>
 						))}
 					</box>
