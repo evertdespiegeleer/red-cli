@@ -28,17 +28,21 @@ export const useRegisteredKeybinds = () => {
 export const useRegisterKeyBind = (
 	keyCombination: string,
 	description: string,
+	enabled = true,
 ) => {
 	const { addKeyBind, removeKeyBind } = useRegisteredKeybinds();
 
 	// biome-ignore lint/correctness/useExhaustiveDependencies: We only want to run this effect on mount and unmount
 	useEffect(() => {
+		if (!enabled) {
+			return;
+		}
 		const keyBind = { keyCombination, description };
 		addKeyBind(keyBind);
 		return () => {
 			removeKeyBind(keyBind);
 		};
-	}, [keyCombination, description]);
+	}, [keyCombination, description, enabled]);
 };
 
 export function RegisteredKeybindsProvider(props: {

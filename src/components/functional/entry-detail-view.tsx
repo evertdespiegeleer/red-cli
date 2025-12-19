@@ -1,6 +1,7 @@
 import { useKeyboard } from "@opentui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
 import clipboard from "clipboardy";
+import { useState } from "react";
 import { useRefreshConfig } from "../../contexts/refresh-config";
 import { useRegisterKeyBind } from "../../contexts/registered-keybinds";
 import { useRoute } from "../../routing/provider";
@@ -22,6 +23,7 @@ interface Props {
 
 export function EntryDetails(props: Props) {
 	const router = useRoute();
+	const [isPrettified, setIsPrettified] = useState(true);
 
 	const query = useQuery({
 		queryKey: ["redis", "key", props.pathKey],
@@ -103,6 +105,55 @@ export function EntryDetails(props: Props) {
 		}
 	});
 
+	// Helper function to check if value is valid JSON
+	const isValidJSON = (value: unknown): boolean => {
+		if (typeof value === "string") {
+			try {
+				JSON.parse(value);
+				return true;
+			} catch {
+				return false;
+			}
+		}
+		// Non-string values (objects, arrays) are already structured and can be prettified
+		return typeof value === "object" && value !== null;
+	};
+
+	// Helper function to format the value
+	const formatValue = (value: unknown): string => {
+		if (typeof value === "string") {
+			// For string types, check if it's valid JSON
+			if (isValidJSON(value)) {
+				if (isPrettified) {
+					return JSON.stringify(JSON.parse(value), null, 4);
+				}
+				return value; // Raw string
+			}
+			// Not valid JSON, just return the string
+			return value;
+		}
+		// For objects/arrays (hash, list, set types)
+		if (isPrettified) {
+			return JSON.stringify(value, null, 2);
+		}
+		return JSON.stringify(value);
+	};
+
+	// Only show prettify keybind if value is valid JSON
+	const canPrettify = query.data != null && isValidJSON(query.data.value);
+
+	useRegisterKeyBind("shift+j", "Toggle JSON prettify", canPrettify);
+
+	useKeyboard((key) => {
+		if (!props.focussed || !canPrettify) {
+			return;
+		}
+		if (key.name === "j" && key.shift) {
+			key.preventDefault();
+			setIsPrettified((current) => !current);
+		}
+	});
+
 	return (
 		<box
 			borderColor="cyan"
@@ -133,7 +184,7 @@ export function EntryDetails(props: Props) {
 			</BoxTitle>
 
 			{query.data != null && (
-				<box flexDirection="column" gap={1}>
+				<box flexDirection="column" gap={1} flexGrow={1}>
 					{/* Table with info */}
 					<box flexDirection="row" gap={1}>
 						<box flexDirection="column">
@@ -150,13 +201,10 @@ export function EntryDetails(props: Props) {
 						</box>
 					</box>
 
-					{/* Value */}
-					<box flexDirection="column">
-						<text fg="cyan">Value:</text>
-						<text selectable={true}>
-							{JSON.stringify(query.data.value, null, 2)}
-						</text>
-					</box>
+					{/* Value in scrollable box */}
+					<scrollbox flexGrow={1}>
+						<text selectable={true}>{formatValue(query.data.value)}</text>
+					</scrollbox>
 				</box>
 			)}
 
