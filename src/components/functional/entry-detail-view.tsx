@@ -1,5 +1,6 @@
 import { useKeyboard } from "@opentui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
+import type { StyledText } from "@opentui/core";
 import clipboard from "clipboardy";
 import { useState } from "react";
 import { useRefreshConfig } from "../../contexts/refresh-config";
@@ -12,6 +13,7 @@ import {
 	UnsupportedRedisKeyTypeError,
 } from "../../util/get-redis-key-details";
 import { gitRepoPath } from "../../util/git-repo";
+import { syntaxHighlightJSON } from "../../util/json-syntax-highlight";
 import { useInterval } from "../../util/use-interval";
 import { BoxTitle } from "../pure/box-title";
 import { RedisKeyType } from "../pure/redis-key-type";
@@ -120,22 +122,26 @@ export function EntryDetails(props: Props) {
 	};
 
 	// Helper function to format the value
-	const formatValue = (value: unknown): string => {
+	const formatValue = (value: unknown): string | StyledText => {
 		if (typeof value === "string") {
 			// For string types, check if it's valid JSON
 			if (isValidJSON(value)) {
 				if (isPrettified) {
-					return JSON.stringify(JSON.parse(value), null, 4);
+					const formatted = JSON.stringify(JSON.parse(value), null, 4);
+					return syntaxHighlightJSON(formatted);
 				}
-				return value; // Raw string
+				// Return raw string without highlighting
+				return value;
 			}
 			// Not valid JSON, just return the string
 			return value;
 		}
 		// For objects/arrays (hash, list, set types)
 		if (isPrettified) {
-			return JSON.stringify(value, null, 2);
+			const formatted = JSON.stringify(value, null, 2);
+			return syntaxHighlightJSON(formatted);
 		}
+		// Return compact JSON without highlighting
 		return JSON.stringify(value);
 	};
 
@@ -203,7 +209,7 @@ export function EntryDetails(props: Props) {
 
 					{/* Value in scrollable box */}
 					<scrollbox flexGrow={1}>
-						<text selectable={true}>{formatValue(query.data.value)}</text>
+						<text selectable={true} content={formatValue(query.data.value)} />
 					</scrollbox>
 				</box>
 			)}
