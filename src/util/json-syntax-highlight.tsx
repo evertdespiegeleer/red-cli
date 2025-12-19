@@ -1,10 +1,10 @@
 import {
-	StyledText,
-	type TextChunk,
 	brightBlack,
 	cyan,
 	green,
 	magenta,
+	StyledText,
+	type TextChunk,
 	yellow,
 } from "@opentui/core";
 

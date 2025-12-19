@@ -1,6 +1,6 @@
+import type { StyledText } from "@opentui/core";
 import { useKeyboard } from "@opentui/react";
 import { useMutation, useQuery } from "@tanstack/react-query";
-import type { StyledText } from "@opentui/core";
 import clipboard from "clipboardy";
 import { useState } from "react";
 import { useRefreshConfig } from "../../contexts/refresh-config";
